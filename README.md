@@ -1,4 +1,4 @@
-# TorrentMonitor
+# ReadManga Grabber
 
 Утилита для скачивания манги с сайтов ReadManga, MintManga и SelfManga. Утилита работает под Windows, Linux и macOS.
 
