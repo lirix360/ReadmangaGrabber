@@ -24,6 +24,10 @@ var reset = ansi.ColorCode("reset")
 func main() {
     fmt.Println()
     
+    flag.Usage = func() {
+        fmt.Fprintf(os.Stderr, "Использование: %s -url адрес_манги [список глав для скачивания]\n\n", os.Args[0])
+    }
+    
     urlPtr := flag.String("url", "", "Адрес страницы описания манги или отдельной главы главы")
     
     flag.Parse()
