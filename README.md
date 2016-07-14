@@ -10,6 +10,6 @@
 
 ### Использование:
 
-* Скачать все главы: grabber -url http://readmanga.me/manga
-* Скачать указанные главы: grabber -url http://readmanga.me/manga vol1/5 vol10/90
-* Скачать одну главу: grabber -url http://readmanga.me/manga/vol1/5
+* Скачать все главы: grabber -url http://readmanga&#46;me/manga
+* Скачать указанные главы: grabber -url http://readmanga&#46;me/manga vol1/5 vol10/90
+* Скачать одну главу: grabber -url http://readmanga&#46;me/manga/vol1/5

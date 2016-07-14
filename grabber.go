@@ -17,15 +17,11 @@ import (
 
 var mangaChapters []string
 
-var green = ansi.ColorCode("green")
-var red = ansi.ColorCode("red")
-var reset = ansi.ColorCode("reset")
-
 func main() {
     fmt.Println()
     
     flag.Usage = func() {
-        fmt.Fprintf(os.Stderr, "Использование: %s -url адрес_манги [список глав для скачивания]\n\n", os.Args[0])
+        fmt.Println(ansi.Red, "Использование: " + os.Args[0] + " -url адрес_манги [список глав для скачивания]\n", ansi.Reset)
     }
     
     urlPtr := flag.String("url", "", "Адрес страницы описания манги или отдельной главы главы")
@@ -33,14 +29,14 @@ func main() {
     flag.Parse()
     
     if *urlPtr == "" {
-        fmt.Println(red, "Не указан адрес манги!\n", reset)
+        fmt.Println(ansi.Red, "Не указан адрес манги!\n", ansi.Reset)
         os.Exit(0)
     }
     
     urlParts, _ := url.Parse(*urlPtr)
     
     if urlParts.Host != "readmanga.me" && urlParts.Host != "mintmanga.com" && urlParts.Host != "selfmanga.ru" {
-        fmt.Println(red, "Указан некорректный адрес манги! Скачивание доступно только с сайтов readmanga.me, mintmanga.com и selfmanga.ru.\n", reset)
+        fmt.Println(ansi.Red, "Указан некорректный адрес манги! Скачивание доступно только с сайтов readmanga.me, mintmanga.com и selfmanga.ru.\n", ansi.Reset)
         os.Exit(0)
     }
     
@@ -55,21 +51,18 @@ func main() {
     } else if len(pathParts) == 3 {
         mangaChapters = append(mangaChapters, pathParts[1] + "/" + pathParts[2])
     } else {
-        fmt.Println(red, "Указан некорректный адрес манги!\n", reset)
+        fmt.Println(ansi.Red, "Указан некорректный адрес манги!\n", ansi.Reset)
         os.Exit(0)
     }
     
-    fmt.Println("Chapters:", mangaChapters)
-    os.Exit(0)
-    
     if len(mangaChapters) > 0 {
-        fmt.Println(green, "Начинаю скачивание.", reset)
+        fmt.Println(ansi.Green, "Начинаю скачивание.", ansi.Reset)
         
         downloadChapters(urlParts.Host, pathParts[0])
         
-        fmt.Println(green, "Скачивание завершено.", reset)
+        fmt.Println(ansi.Green, "Скачивание завершено.", ansi.Reset)
     } else {
-        fmt.Println(red, "Не найдено глав для скачивания!\n", reset)
+        fmt.Println(ansi.Red, "Не найдено глав для скачивания!\n", ansi.Reset)
         os.Exit(0)
     }
     
@@ -99,7 +92,7 @@ func downloadChapters(mangaHost string, mangaName string) {
         imageLinks := getImageLinks(url + mangaChapters[i])
         
         if len(imageLinks) > 0 {
-            fmt.Println(green, "Скачиваю главу " + mangaChapters[i] + ".", reset)
+            fmt.Println(ansi.Green, "Скачиваю главу " + mangaChapters[i] + ".", ansi.Reset)
             
             for x := 0; x < len(imageLinks); x++ {
                 downloadFile(imageLinks[x], mangaName, mangaChapters[i])
@@ -107,7 +100,7 @@ func downloadChapters(mangaHost string, mangaName string) {
                 time.Sleep(200 * time.Millisecond)
             }
         } else {
-            fmt.Println(red, "В главе " + mangaChapters[i] + " не найдено страниц для скачивания!", reset)
+            fmt.Println(ansi.Red, "В главе " + mangaChapters[i] + " не найдено страниц для скачивания!", ansi.Reset)
         }
     }
 }
