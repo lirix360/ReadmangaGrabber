@@ -13,6 +13,7 @@ import (
     "strings"
     "github.com/PuerkitoBio/goquery"
     "github.com/mgutz/ansi"
+    "github.com/jhoonb/archivex"
 )
 
 var mangaChapters []string
@@ -21,10 +22,18 @@ func main() {
     fmt.Println()
     
     flag.Usage = func() {
-        fmt.Println(ansi.Red, "Использование: " + os.Args[0] + " -url адрес_манги [список глав для скачивания]\n", ansi.Reset)
+        fmt.Println(ansi.Blue, "Использование: " + os.Args[0] + " параметры [список глав для скачивания]\n", ansi.Reset)
+        fmt.Println(ansi.Blue, "Параметры:", ansi.Reset)
+        fmt.Println(ansi.Blue, " -url=адрес_манги\tАдрес страницы описания манги или отдельной главы", ansi.Reset)
+        fmt.Println(ansi.Blue, " -zip\t\t\tСоздание ZIP архивов для каждой главы после скачивания", ansi.Reset)
+        fmt.Println(ansi.Blue, " -delete\t\tУдалить исходные файлы после архивации (используется только вместе с флагом -zip)\n", ansi.Reset)
+        fmt.Println(ansi.Blue, "Список глав для скачивания указывается через пробел в формате том/глава (пример: vol1/5 vol10/65)\n", ansi.Reset)
     }
     
     urlPtr := flag.String("url", "", "Адрес страницы описания манги или отдельной главы главы")
+    
+    zipPtr := flag.Bool("zip", false, "Создать ZIP архивы для каждой главы после скачивания")
+    delPtr := flag.Bool("delete", false, "Удалить исходные файлы после архивации")
     
     flag.Parse()
     
@@ -58,7 +67,7 @@ func main() {
     if len(mangaChapters) > 0 {
         fmt.Println(ansi.Green, "Начинаю скачивание.", ansi.Reset)
         
-        downloadChapters(urlParts.Host, pathParts[0])
+        downloadChapters(urlParts.Host, pathParts[0], *zipPtr, *delPtr)
         
         fmt.Println(ansi.Green, "Скачивание завершено.", ansi.Reset)
     } else {
@@ -85,7 +94,7 @@ func getChapters(mangaUrl string) {
     }
 }
 
-func downloadChapters(mangaHost string, mangaName string) {
+func downloadChapters(mangaHost string, mangaName string, createZip bool, deleteSource bool) {
     url := "http://" + mangaHost + "/" + mangaName + "/"
     
     for i := 0; i < len(mangaChapters); i++ {
@@ -101,6 +110,19 @@ func downloadChapters(mangaHost string, mangaName string) {
             }
         } else {
             fmt.Println(ansi.Red, "В главе " + mangaChapters[i] + " не найдено страниц для скачивания!", ansi.Reset)
+        }
+        
+        if createZip {
+            fmt.Println(ansi.Green, "- Архивирую главу " + mangaChapters[i] + ".", ansi.Reset)
+            
+            zip := new(archivex.ZipFile)
+            zip.Create("Downloaded manga/" + mangaName + "/" + mangaChapters[i] + ".zip")
+            zip.AddAll("Downloaded manga/" + mangaName + "/" + mangaChapters[i], true)
+            zip.Close()
+            
+            if deleteSource {
+                os.RemoveAll("Downloaded manga/" + mangaName + "/" + mangaChapters[i])
+            }
         }
     }
 }
