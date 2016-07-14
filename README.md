@@ -1,6 +1,6 @@
 # ReadManga Grabber
 
-Утилита для скачивания манги с сайтов ReadManga, MintManga и SelfManga. Утилита работает под Windows, Linux и macOS.
+Утилита для скачивания манги с сайтов ReadManga, MintManga и SelfManga. Утилита работает под Windows, Linux и macOS и не требует установки какого-либо дополнительного софта.
 
 ### Возможности:
 
@@ -10,6 +10,6 @@
 
 ### Использование:
 
-* Скачать все главы: grabber -url http://readmanga&#46;me/manga
-* Скачать указанные главы: grabber -url http://readmanga&#46;me/manga vol1/5 vol10/90
-* Скачать одну главу: grabber -url http://readmanga&#46;me/manga/vol1/5
+* Скачать все главы: readmanga_grabber -url http://readmanga.me/manga_name
+* Скачать указанные главы: readmanga_grabber -url http://readmanga.me/manga_name vol1/5 vol10/90
+* Скачать одну главу: readmanga_grabber -url http://readmanga.me/manga_name/vol1/5
