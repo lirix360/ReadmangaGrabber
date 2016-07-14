@@ -11,15 +11,20 @@
 
 Использование: readmanga_grabber параметры [список глав для скачивания]
 
-Параметры: 
- -url=адрес_манги   Адрес страницы описания манги или отдельной главы 
- -zip               Создание ZIP архивов для каждой главы после скачивания 
- -delete            Удалить исходные файлы после архивации (используется только вместе с флагом -zip)
+Параметры:
+```
+-url=адрес_манги   Адрес страницы описания манги или отдельной главы
+-zip               Создание ZIP архивов для каждой главы после скачивания
+-delete            Удалить исходные файлы после архивации (используется только вместе с флагом -zip)
+```
 
 Список глав для скачивания указывается через пробел в формате том/глава (пример: vol1/5 vol10/65)
 
 ### Примеры:
 
-* Скачать 35 и 40 главы манги Witch Craft Works: readmanga_grabber -url=http://readmanga.me/witch_craft_works vol8/35 vol9/40
-* Скачать одну 10 главу манги Bakuon!!: readmanga_grabber -url=http://readmanga.me/bakuon__/vol2/10
-* Скачать все главы манги Jitsu wa Watashi wa..., заархивировать и удалить исходные файлы после архивации: readmanga_grabber -zip -delete -url=http://readmanga.me/actually__i_am___
+* Скачать 35 и 40 главы манги Witch Craft Works:  
+`readmanga_grabber -url=http://readmanga.me/witch_craft_works vol8/35 vol9/40`
+* Скачать одну 10 главу манги Bakuon!!:  
+`readmanga_grabber -url=http://readmanga.me/bakuon__/vol2/10`
+* Скачать все главы манги Jitsu wa Watashi wa..., заархивировать и удалить исходные файлы после архивации:  
+`readmanga_grabber -zip -delete -url=http://readmanga.me/actually__i_am___`
