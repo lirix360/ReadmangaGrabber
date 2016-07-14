@@ -1,71 +1,74 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en-us">
   <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta charset="UTF-8">
     <title>ReadManga Grabber by lirix360</title>
-
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/github-light.css">
-    <meta name="viewport" content="width=device-width">
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
   </head>
   <body>
-    <div class="wrapper">
-      <header>
-        <h1>ReadManga Grabber</h1>
-        <p>Утилита для скачивания манги с сайтов ReadManga, MintManga и SelfManga.</p>
+    <section class="page-header">
+      <h1 class="project-name">ReadManga Grabber</h1>
+      <h2 class="project-tagline">Утилита для скачивания манги с сайтов ReadManga, MintManga и SelfManga.</h2>
+      <a href="https://github.com/lirix360/ReadmangaGrabber" class="btn">View on GitHub</a>
+      <a href="https://github.com/lirix360/ReadmangaGrabber/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/lirix360/ReadmangaGrabber/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
 
-        <p class="view"><a href="https://github.com/lirix360/ReadmangaGrabber">View the Project on GitHub <small>lirix360/ReadmangaGrabber</small></a></p>
-
-
-        <ul>
-          <li><a href="https://github.com/lirix360/ReadmangaGrabber/zipball/master">Download <strong>ZIP File</strong></a></li>
-          <li><a href="https://github.com/lirix360/ReadmangaGrabber/tarball/master">Download <strong>TAR Ball</strong></a></li>
-          <li><a href="https://github.com/lirix360/ReadmangaGrabber">View On <strong>GitHub</strong></a></li>
-        </ul>
-      </header>
-      <section>
-        <h1>
+    <section class="main-content">
+      <h1>
 <a id="readmanga-grabber" class="anchor" href="#readmanga-grabber" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ReadManga Grabber</h1>
 
-<p>ReadManga Grabber - утилита для скачивания манги с сайтов ReadManga, MintManga и SelfManga. Утилита работает под Windows, Linux и macOS и не требует установки какого-либо дополнительного софта.</p>
+<p>Утилита для скачивания манги с сайтов ReadManga, MintManga и SelfManga. Утилита работает под Windows, Linux и macOS и не требует установки какого-либо дополнительного софта.</p>
 
 <h2>
 <a id="Возможности" class="anchor" href="#%D0%92%D0%BE%D0%B7%D0%BC%D0%BE%D0%B6%D0%BD%D0%BE%D1%81%D1%82%D0%B8" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Возможности</h2>
 
 <ul>
-<li>Скачивание целой манги</li>
-<li>Скачивание указанного списка глав из манги</li>
-<li>Скачивание отдельной главы по прямой ссылке</li>
+<li>Скачивание целой манги / указанного списка глав из манги / отдельной главы по прямой ссылке</li>
+<li>Сжатие скачанных глав в zip-архивы</li>
 </ul>
 
 <h2>
 <a id="Использование" class="anchor" href="#%D0%98%D1%81%D0%BF%D0%BE%D0%BB%D1%8C%D0%B7%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Использование</h2>
 
+<p>Использование: readmanga_grabber параметры [список глав для скачивания]</p>
+
+<p>Параметры:</p>
+
+<pre><code>-url=адрес_манги   Адрес страницы описания манги или отдельной главы
+-zip               Создание ZIP архивов для каждой главы после скачивания
+-delete            Удалить исходные файлы после архивации (используется только вместе с флагом -zip)
+</code></pre>
+
+<p>Список глав для скачивания указывается через пробел в формате том/глава (пример: vol1/5 vol10/65)</p>
+
 <h3>
-<a id="Скачать-все-главы" class="anchor" href="#%D0%A1%D0%BA%D0%B0%D1%87%D0%B0%D1%82%D1%8C-%D0%B2%D1%81%D0%B5-%D0%B3%D0%BB%D0%B0%D0%B2%D1%8B" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Скачать все главы:</h3>
+<a id="Примеры" class="anchor" href="#%D0%9F%D1%80%D0%B8%D0%BC%D0%B5%D1%80%D1%8B" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Примеры:</h3>
 
-<p>readmanga_grabber -url <a href="http://readmanga.me/manga_name">http://readmanga.me/manga_name</a></p>
+<ul>
+<li>Скачать 35 и 40 главы манги Witch Craft Works:<br>
+<code>readmanga_grabber -url=http://readmanga.me/witch_craft_works vol8/35 vol9/40</code>
+</li>
+<li>Скачать одну 10 главу манги Bakuon!!:<br>
+<code>readmanga_grabber -url=http://readmanga.me/bakuon__/vol2/10</code>
+</li>
+<li>Скачать все главы манги Jitsu wa Watashi wa..., заархивировать и удалить исходные файлы после архивации:<br>
+<code>readmanga_grabber -zip -delete -url=http://readmanga.me/actually__i_am___</code>
+</li>
+</ul>
 
-<h3>
-<a id="Скачать-указанные-главы" class="anchor" href="#%D0%A1%D0%BA%D0%B0%D1%87%D0%B0%D1%82%D1%8C-%D1%83%D0%BA%D0%B0%D0%B7%D0%B0%D0%BD%D0%BD%D1%8B%D0%B5-%D0%B3%D0%BB%D0%B0%D0%B2%D1%8B" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Скачать указанные главы:</h3>
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/lirix360/ReadmangaGrabber">ReadManga Grabber</a> is maintained by <a href="https://github.com/lirix360">lirix360</a>.</span>
 
-<p>readmanga_grabber -url <a href="http://readmanga.me/manga_name">http://readmanga.me/manga_name</a> vol1/5 vol10/90</p>
-
-<h3>
-<a id="Скачать-одну-главу" class="anchor" href="#%D0%A1%D0%BA%D0%B0%D1%87%D0%B0%D1%82%D1%8C-%D0%BE%D0%B4%D0%BD%D1%83-%D0%B3%D0%BB%D0%B0%D0%B2%D1%83" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Скачать одну главу:</h3>
-
-<p>readmanga_grabber -url <a href="http://readmanga.me/manga_name/vol1/5">http://readmanga.me/manga_name/vol1/5</a></p>
-      </section>
-      <footer>
-        <p>This project is maintained by <a href="https://github.com/lirix360">lirix360</a></p>
-        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
       </footer>
-    </div>
-    <script src="javascripts/scale.fix.js"></script>
-    
+
+    </section>
+
+  
   </body>
 </html>
