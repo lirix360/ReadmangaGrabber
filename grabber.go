@@ -59,6 +59,9 @@ func main() {
         os.Exit(0)
     }
     
+    fmt.Println("Chapters:", mangaChapters)
+    os.Exit(0)
+    
     if len(mangaChapters) > 0 {
         fmt.Println(green, "Начинаю скачивание.", reset)
         
@@ -83,6 +86,10 @@ func getChapters(mangaUrl string) {
         
         mangaChapters = append(mangaChapters, linkPaths[1] + "/" + linkPaths[2])
     })
+    
+    for left, right := 0, len(mangaChapters)-1; left < right; left, right = left+1, right-1 {
+        mangaChapters[left], mangaChapters[right] = mangaChapters[right], mangaChapters[left]
+    }
 }
 
 func downloadChapters(mangaHost string, mangaName string) {
