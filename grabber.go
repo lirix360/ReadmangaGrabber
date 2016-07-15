@@ -108,27 +108,27 @@ func downloadChapters(mangaHost string, mangaName string, createZip bool, delete
                 
                 time.Sleep(200 * time.Millisecond)
             }
+            
+            if createZip {
+                fmt.Println(ansi.Green, "- Архивирую главу " + mangaChapters[i] + ".", ansi.Reset)
+                
+                zip := new(archivex.ZipFile)
+                zip.Create("Downloaded manga/" + mangaName + "/" + mangaChapters[i] + ".zip")
+                zip.AddAll("Downloaded manga/" + mangaName + "/" + mangaChapters[i], true)
+                zip.Close()
+                
+                if deleteSource {
+                    os.RemoveAll("Downloaded manga/" + mangaName + "/" + mangaChapters[i])
+                }
+            }
         } else {
             fmt.Println(ansi.Red, "В главе " + mangaChapters[i] + " не найдено страниц для скачивания!", ansi.Reset)
-        }
-        
-        if createZip {
-            fmt.Println(ansi.Green, "- Архивирую главу " + mangaChapters[i] + ".", ansi.Reset)
-            
-            zip := new(archivex.ZipFile)
-            zip.Create("Downloaded manga/" + mangaName + "/" + mangaChapters[i] + ".zip")
-            zip.AddAll("Downloaded manga/" + mangaName + "/" + mangaChapters[i], true)
-            zip.Close()
-            
-            if deleteSource {
-                os.RemoveAll("Downloaded manga/" + mangaName + "/" + mangaChapters[i])
-            }
         }
     }
 }
 
 func getImageLinks(chapterUrl string) []string {
-    resp, _ := http.Get(chapterUrl)
+    resp, _ := http.Get(chapterUrl + "?mature=1")
     
     pageBody, _ := ioutil.ReadAll(resp.Body)
     
