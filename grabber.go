@@ -38,7 +38,7 @@ func main() {
     flag.Parse()
     
     if *urlPtr == "" {
-        fmt.Println(ansi.Red, "Не указан адрес манги!\n", ansi.Reset)
+        flag.Usage()
         os.Exit(0)
     }
     
