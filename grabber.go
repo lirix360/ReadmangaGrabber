@@ -173,7 +173,7 @@ func getImageLinks(chapterURL string) []string {
 	return imageLinks
 }
 
-func downloadFile(fileURL string, mangaName string, mangaChapter string) {
+func downloadFile(fileURL string, mangaName string, mangaChapter string) bool {
 	urlParts := strings.Split(fileURL, "/")
 
 	if _, err := os.Stat("Downloaded manga/" + mangaName + "/" + mangaChapter); os.IsNotExist(err) {
@@ -183,17 +183,22 @@ func downloadFile(fileURL string, mangaName string, mangaChapter string) {
 	fp, err := os.OpenFile("Downloaded manga/"+mangaName+"/"+mangaChapter+"/"+urlParts[len(urlParts)-1], os.O_RDWR|os.O_CREATE, os.ModePerm)
 	if err != nil {
 		fmt.Println(ansi.Red, "Произошла ошибка при скачивании файла ("+mangaChapter+"/"+urlParts[len(urlParts)-1]+")!\n", ansi.Reset)
+		return false
 	}
 	defer fp.Close()
 
 	resp, err := http.Get(fileURL)
 	if err != nil {
 		fmt.Println(ansi.Red, "Произошла ошибка при скачивании файла ("+mangaChapter+"/"+urlParts[len(urlParts)-1]+")!\n", ansi.Reset)
+		return false
 	}
 	defer resp.Body.Close()
 
 	_, err2 := io.Copy(fp, resp.Body)
 	if err2 != nil {
 		fmt.Println(ansi.Red, "Произошла ошибка при скачивании файла ("+mangaChapter+"/"+urlParts[len(urlParts)-1]+")!\n", ansi.Reset)
+		return false
 	}
+
+	return true
 }
