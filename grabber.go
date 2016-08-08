@@ -92,7 +92,7 @@ func getChapters(mangaURL string) {
 
 	mangaPage.Find(".chapters-link a").Each(func(i int, s *goquery.Selection) {
 		link, err := s.Attr("href")
-		if err {
+		if !err {
 			fmt.Println(ansi.Red, "Произошла ошибка при поиске глав для скачивания!\n", ansi.Reset)
 			os.Exit(0)
 		}
