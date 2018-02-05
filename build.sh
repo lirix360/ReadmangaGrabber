@@ -1,19 +1,19 @@
 #!/bin/sh
 
 export GOOS=windows
-export GOARCH=386
+export GOARCH=amd64
 
-go build -ldflags '-s' -o dist/readmanga_grabber_win.exe grabber.go
+go build -ldflags '-s' -o dist/readmanga_grabber_win_x64.exe grabber.go
 
 export GOOS=linux
-export GOARCH=386
+export GOARCH=amd64
 
-go build -ldflags '-s' -o dist/readmanga_grabber_linux grabber.go
+go build -ldflags '-s' -o dist/readmanga_grabber_linux_x64 grabber.go
 
 export GOOS=darwin
-export GOARCH=386
+export GOARCH=amd64
 
-go build -ldflags '-s' -o dist/readmanga_grabber_macos grabber.go
+go build -ldflags '-s' -o dist/readmanga_grabber_macos_x64 grabber.go
 
 export GOOS=
 export GOARCH=

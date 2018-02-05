@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -13,22 +12,23 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/cavaliercoder/grab"
 	"github.com/jhoonb/archivex"
-	"github.com/mgutz/ansi"
 )
 
 var mangaChapters []string
+var reqURL string
 
 func main() {
 	fmt.Println()
 
 	flag.Usage = func() {
-		fmt.Println(ansi.Blue, "Использование: "+os.Args[0]+" параметры [список глав для скачивания]\n", ansi.Reset)
-		fmt.Println(ansi.Blue, "Параметры:", ansi.Reset)
-		fmt.Println(ansi.Blue, " -url=адрес_манги\tАдрес страницы описания манги или отдельной главы", ansi.Reset)
-		fmt.Println(ansi.Blue, " -zip\t\t\tСоздание ZIP архивов для каждой главы после скачивания", ansi.Reset)
-		fmt.Println(ansi.Blue, " -delete\t\tУдалить исходные файлы после архивации (используется только вместе с флагом -zip)\n", ansi.Reset)
-		fmt.Println(ansi.Blue, "Список глав для скачивания указывается через пробел в формате том/глава (пример: vol1/5 vol10/65)\n", ansi.Reset)
+		fmt.Println("Использование: " + os.Args[0] + " параметры [список глав для скачивания]\n")
+		fmt.Println("Параметры:")
+		fmt.Println(" -url=адрес_манги\tАдрес страницы описания манги или отдельной главы")
+		fmt.Println(" -zip\t\t\tСоздание ZIP архивов для каждой главы после скачивания")
+		fmt.Println(" -delete\t\tУдалить исходные файлы после архивации (используется только вместе с флагом -zip)\n")
+		fmt.Println("Список глав для скачивания указывается через пробел в формате том/глава (пример: vol1/5 vol10/65)\n")
 	}
 
 	urlPtr := flag.String("url", "", "Адрес страницы описания манги или отдельной главы главы")
@@ -45,12 +45,12 @@ func main() {
 
 	urlParts, err := url.Parse(*urlPtr)
 	if err != nil {
-		fmt.Println(ansi.Red, "Произошла ошибка при обработке адреса манги!\n", ansi.Reset)
+		fmt.Println("Произошла ошибка при обработке адреса манги!\n")
 		os.Exit(0)
 	}
 
 	if urlParts.Host != "readmanga.me" && urlParts.Host != "mintmanga.com" && urlParts.Host != "selfmanga.ru" {
-		fmt.Println(ansi.Red, "Указан некорректный адрес манги! Скачивание доступно только с сайтов readmanga.me, mintmanga.com и selfmanga.ru.\n", ansi.Reset)
+		fmt.Println("Указан некорректный адрес манги! Скачивание доступно только с сайтов readmanga.me, mintmanga.com и selfmanga.ru.\n")
 		os.Exit(0)
 	}
 
@@ -65,18 +65,18 @@ func main() {
 	} else if len(pathParts) == 3 {
 		mangaChapters = append(mangaChapters, pathParts[1]+"/"+pathParts[2])
 	} else {
-		fmt.Println(ansi.Red, "Указан некорректный адрес манги!\n", ansi.Reset)
+		fmt.Println("Указан некорректный адрес манги!\n")
 		os.Exit(0)
 	}
 
 	if len(mangaChapters) > 0 {
-		fmt.Println(ansi.Green, "Начинаю скачивание.", ansi.Reset)
+		fmt.Println("Начинаю скачивание.")
 
 		downloadChapters(urlParts.Host, pathParts[0], *zipPtr, *delPtr)
 
-		fmt.Println(ansi.Green, "Скачивание завершено.", ansi.Reset)
+		fmt.Println("Скачивание завершено.")
 	} else {
-		fmt.Println(ansi.Red, "Не найдено глав для скачивания!\n", ansi.Reset)
+		fmt.Println("Не найдено глав для скачивания!\n")
 		os.Exit(0)
 	}
 
@@ -86,14 +86,14 @@ func main() {
 func getChapters(mangaURL string) {
 	mangaPage, err := goquery.NewDocument(mangaURL)
 	if err != nil {
-		fmt.Println(ansi.Red, "Произошла ошибка при поиске глав для скачивания!\n", ansi.Reset)
+		fmt.Println("Произошла ошибка при поиске глав для скачивания!\n")
 		os.Exit(0)
 	}
 
 	mangaPage.Find(".chapters-link a").Each(func(i int, s *goquery.Selection) {
 		link, err := s.Attr("href")
 		if !err {
-			fmt.Println(ansi.Red, "Произошла ошибка при поиске глав для скачивания!\n", ansi.Reset)
+			fmt.Println("Произошла ошибка при поиске глав для скачивания!\n")
 			os.Exit(0)
 		}
 
@@ -113,8 +113,14 @@ func downloadChapters(mangaHost string, mangaName string, createZip bool, delete
 	for i := 0; i < len(mangaChapters); i++ {
 		imageLinks := getImageLinks(url + mangaChapters[i])
 
+		reqURL = url + mangaChapters[i]
+
 		if len(imageLinks) > 0 {
-			fmt.Println(ansi.Green, "Скачиваю главу "+mangaChapters[i]+".", ansi.Reset)
+			if _, err := os.Stat("Downloads/" + mangaName + "/" + mangaChapters[i]); os.IsNotExist(err) {
+				os.MkdirAll("Downloads/"+mangaName+"/"+mangaChapters[i], 0755)
+			}
+
+			fmt.Println("Скачиваю главу " + mangaChapters[i] + ".")
 
 			for x := 0; x < len(imageLinks); x++ {
 				downloadFile(imageLinks[x], mangaName, mangaChapters[i])
@@ -123,19 +129,19 @@ func downloadChapters(mangaHost string, mangaName string, createZip bool, delete
 			}
 
 			if createZip {
-				fmt.Println(ansi.Green, "- Архивирую главу "+mangaChapters[i]+".", ansi.Reset)
+				fmt.Println("- Архивирую главу " + mangaChapters[i] + ".")
 
 				zip := new(archivex.ZipFile)
-				zip.Create("Downloaded manga/" + mangaName + "/" + mangaChapters[i] + ".zip")
-				zip.AddAll("Downloaded manga/"+mangaName+"/"+mangaChapters[i], true)
+				zip.Create("Downloads/" + mangaName + "/" + mangaChapters[i] + ".zip")
+				zip.AddAll("Downloads/"+mangaName+"/"+mangaChapters[i], true)
 				zip.Close()
 
 				if deleteSource {
-					os.RemoveAll("Downloaded manga/" + mangaName + "/" + mangaChapters[i])
+					os.RemoveAll("Downloads/" + mangaName + "/" + mangaChapters[i])
 				}
 			}
 		} else {
-			fmt.Println(ansi.Red, "В главе "+mangaChapters[i]+" не найдено страниц для скачивания!", ansi.Reset)
+			fmt.Println("В главе " + mangaChapters[i] + " не найдено страниц для скачивания!")
 		}
 	}
 }
@@ -174,29 +180,16 @@ func getImageLinks(chapterURL string) []string {
 }
 
 func downloadFile(fileURL string, mangaName string, mangaChapter string) bool {
-	urlParts := strings.Split(fileURL, "/")
+	client := grab.NewClient()
+	req, _ := grab.NewRequest("Downloads/"+mangaName+"/"+mangaChapter, fileURL)
 
-	if _, err := os.Stat("Downloaded manga/" + mangaName + "/" + mangaChapter); os.IsNotExist(err) {
-		os.MkdirAll("Downloaded manga/"+mangaName+"/"+mangaChapter, 0755)
-	}
+	client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36"
 
-	fp, err := os.OpenFile("Downloaded manga/"+mangaName+"/"+mangaChapter+"/"+urlParts[len(urlParts)-1], os.O_RDWR|os.O_CREATE, os.ModePerm)
-	if err != nil {
-		fmt.Println(ansi.Red, "Произошла ошибка при скачивании файла ("+mangaChapter+"/"+urlParts[len(urlParts)-1]+")!\n", ansi.Reset)
-		return false
-	}
-	defer fp.Close()
+	req.HTTPRequest.Header.Set("Referer", reqURL)
 
-	resp, err := http.Get(fileURL)
-	if err != nil {
-		fmt.Println(ansi.Red, "Произошла ошибка при скачивании файла ("+mangaChapter+"/"+urlParts[len(urlParts)-1]+")!\n", ansi.Reset)
-		return false
-	}
-	defer resp.Body.Close()
-
-	_, err2 := io.Copy(fp, resp.Body)
-	if err2 != nil {
-		fmt.Println(ansi.Red, "Произошла ошибка при скачивании файла ("+mangaChapter+"/"+urlParts[len(urlParts)-1]+")!\n", ansi.Reset)
+	resp := client.Do(req)
+	if err := resp.Err(); err != nil {
+		fmt.Fprintf(os.Stderr, "Download failed: %v\n", err)
 		return false
 	}
 
