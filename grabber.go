@@ -9,7 +9,6 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/cavaliercoder/grab"
@@ -17,7 +16,6 @@ import (
 )
 
 var mangaChapters []string
-var reqURL string
 
 func main() {
 	fmt.Println()
@@ -111,21 +109,33 @@ func downloadChapters(mangaHost string, mangaName string, createZip bool, delete
 	url := "http://" + mangaHost + "/" + mangaName + "/"
 
 	for i := 0; i < len(mangaChapters); i++ {
-		imageLinks := getImageLinks(url + mangaChapters[i])
+		fmt.Println("Скачиваю главу " + mangaChapters[i] + ".")
 
-		reqURL = url + mangaChapters[i]
+		imageLinks := getImageLinks(url + mangaChapters[i])
 
 		if len(imageLinks) > 0 {
 			if _, err := os.Stat("Downloads/" + mangaName + "/" + mangaChapters[i]); os.IsNotExist(err) {
 				os.MkdirAll("Downloads/"+mangaName+"/"+mangaChapters[i], 0755)
 			}
 
-			fmt.Println("Скачиваю главу " + mangaChapters[i] + ".")
+			imagesReqs := make([]*grab.Request, 0)
 
 			for x := 0; x < len(imageLinks); x++ {
-				downloadFile(imageLinks[x], mangaName, mangaChapters[i])
+				imageReq, _ := grab.NewRequest("Downloads/"+mangaName+"/"+mangaChapters[i], imageLinks[x])
+				imageReq.HTTPRequest.Header.Set("Referer", url+mangaChapters[i])
 
-				time.Sleep(200 * time.Millisecond)
+				imagesReqs = append(imagesReqs, imageReq)
+			}
+
+			client := grab.NewClient()
+			client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36"
+
+			respch := client.DoBatch(2, imagesReqs...)
+
+			for resp := range respch {
+				if err := resp.Err(); err != nil {
+					fmt.Printf("- Ошибка скачивания файла: %s (%s)", resp.Filename, resp.Request.URL())
+				}
 			}
 
 			if createZip {
@@ -141,7 +151,7 @@ func downloadChapters(mangaHost string, mangaName string, createZip bool, delete
 				}
 			}
 		} else {
-			fmt.Println("В главе " + mangaChapters[i] + " не найдено страниц для скачивания!")
+			fmt.Println("- В главе " + mangaChapters[i] + " не найдено страниц для скачивания!")
 		}
 	}
 }
@@ -177,21 +187,4 @@ func getImageLinks(chapterURL string) []string {
 	}
 
 	return imageLinks
-}
-
-func downloadFile(fileURL string, mangaName string, mangaChapter string) bool {
-	client := grab.NewClient()
-	req, _ := grab.NewRequest("Downloads/"+mangaName+"/"+mangaChapter, fileURL)
-
-	client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36"
-
-	req.HTTPRequest.Header.Set("Referer", reqURL)
-
-	resp := client.Do(req)
-	if err := resp.Err(); err != nil {
-		fmt.Fprintf(os.Stderr, "Download failed: %v\n", err)
-		return false
-	}
-
-	return true
 }
