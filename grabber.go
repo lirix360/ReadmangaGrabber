@@ -3,17 +3,33 @@ package main
 import (
 	"flag"
 	"fmt"
+	"image"
+	"image/color"
+	"image/draw"
+	"image/jpeg"
+	"image/png"
 	"io/ioutil"
+	"log"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/cavaliercoder/grab"
 	"github.com/jhoonb/archivex"
+	"github.com/jung-kurt/gofpdf"
 )
+
+const dpi = 96
+const mmInInch = 25.4
+const a4Height = 297
+const a4Width = 210
+const maxHeight = 1122
+const maxWidth = 793
 
 var mangaChapters []string
 
@@ -24,8 +40,9 @@ func main() {
 		fmt.Println("Использование: " + os.Args[0] + " параметры [список глав для скачивания]\n")
 		fmt.Println("Параметры:")
 		fmt.Println(" -url=адрес_манги\tАдрес страницы описания манги или отдельной главы")
+		fmt.Println(" -pdf\t\t\tСоздание PDF файлов для каждой главы после скачивания")
 		fmt.Println(" -zip\t\t\tСоздание ZIP архивов для каждой главы после скачивания")
-		fmt.Println(" -delete\t\tУдалить исходные файлы после архивации (используется только вместе с флагом -zip)\n")
+		fmt.Println(" -delete\t\tУдалить исходные файлы после создания PDF или архивации (используется только вместе с флагами -pdf или -zip)\n")
 		fmt.Println("Список глав для скачивания указывается через пробел в формате том/глава (пример: vol1/5 vol10/65)\n")
 	}
 
@@ -33,6 +50,8 @@ func main() {
 
 	zipPtr := flag.Bool("zip", false, "Создать ZIP архивы для каждой главы после скачивания")
 	delPtr := flag.Bool("delete", false, "Удалить исходные файлы после архивации")
+
+	pdfPtr := flag.Bool("pdf", false, "Создать PDF файлы для каждой главы после скачивания")
 
 	flag.Parse()
 
@@ -70,7 +89,7 @@ func main() {
 	if len(mangaChapters) > 0 {
 		fmt.Println("Начинаю скачивание.")
 
-		downloadChapters(urlParts.Host, pathParts[0], *zipPtr, *delPtr)
+		downloadChapters(urlParts.Host, pathParts[0], *pdfPtr, *zipPtr, *delPtr)
 
 		fmt.Println("Скачивание завершено.")
 	} else {
@@ -105,7 +124,7 @@ func getChapters(mangaURL string) {
 	}
 }
 
-func downloadChapters(mangaHost string, mangaName string, createZip bool, deleteSource bool) {
+func downloadChapters(mangaHost, mangaName string, createPdf, createZip, deleteSource bool) {
 	url := "http://" + mangaHost + "/" + mangaName + "/"
 
 	for i := 0; i < len(mangaChapters); i++ {
@@ -128,7 +147,7 @@ func downloadChapters(mangaHost string, mangaName string, createZip bool, delete
 			}
 
 			client := grab.NewClient()
-			client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36"
+			client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36"
 
 			respch := client.DoBatch(2, imagesReqs...)
 
@@ -145,6 +164,16 @@ func downloadChapters(mangaHost string, mangaName string, createZip bool, delete
 				zip.Create("Downloads/" + mangaName + "/" + mangaChapters[i] + ".zip")
 				zip.AddAll("Downloads/"+mangaName+"/"+mangaChapters[i], true)
 				zip.Close()
+
+				if deleteSource && !createPdf {
+					os.RemoveAll("Downloads/" + mangaName + "/" + mangaChapters[i])
+				}
+			}
+
+			if createPdf {
+				fmt.Println("- Создаю PDF для главы " + mangaChapters[i] + ".")
+
+				createPDF("Downloads/" + mangaName + "/" + mangaChapters[i])
 
 				if deleteSource {
 					os.RemoveAll("Downloads/" + mangaName + "/" + mangaChapters[i])
@@ -187,4 +216,114 @@ func getImageLinks(chapterURL string) []string {
 	}
 
 	return imageLinks
+}
+
+func createPDF(path string) {
+	images, err := ioutil.ReadDir(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var opt gofpdf.ImageOptions
+
+	pdf := gofpdf.New("P", "mm", "A4", "")
+
+	for _, i := range images {
+		width, height := resizeToFit(path + "/" + i.Name())
+
+		if width < height {
+			pdf.AddPage()
+			pdf.ImageOptions(checkImg(path+"/"+i.Name()), (a4Width-width)/2, (a4Height-height)/2, width, height, false, opt, 0, "")
+		} else {
+			pdf.AddPageFormat("L", pdf.GetPageSizeStr("A4"))
+			pdf.ImageOptions(checkImg(path+"/"+i.Name()), (a4Height-width)/2, (a4Width-height)/2, width, height, false, opt, 0, "")
+		}
+	}
+
+	err = pdf.OutputFileAndClose(path + ".pdf")
+	if err != nil {
+		fmt.Println("- Ошибка создания PDF файла: ", err.Error())
+	}
+}
+
+func pixelsToMM(val float64) float64 {
+	return float64(val * mmInInch / dpi)
+}
+
+func resizeToFit(imgFilename string) (float64, float64) {
+	var widthScale, heightScale float64
+
+	width, height := getImageDimension(imgFilename)
+
+	if width < height {
+		widthScale = maxWidth / width
+		heightScale = maxHeight / height
+	} else {
+		widthScale = maxHeight / width
+		heightScale = maxWidth / height
+	}
+
+	scale := math.Min(widthScale, heightScale)
+
+	return math.Round(pixelsToMM(scale * width)), math.Round(pixelsToMM(scale * height))
+}
+
+func getImageDimension(imagePath string) (float64, float64) {
+	file, err := os.Open(imagePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	image, _, err := image.DecodeConfig(file)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return float64(image.Width), float64(image.Height)
+}
+
+func checkImg(srcImg string) (completeImg string) {
+	srcExt := filepath.Ext(srcImg)
+
+	if srcExt == ".png" {
+		completeImg = convertPng(srcImg)
+	} else {
+		completeImg = srcImg
+	}
+
+	return completeImg
+}
+
+func convertPng(pngImg string) string {
+	pngImgFile, _ := os.Open(pngImg)
+
+	imgSrc, err := png.Decode(pngImgFile)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	newImg := image.NewRGBA(imgSrc.Bounds())
+
+	draw.Draw(newImg, newImg.Bounds(), &image.Uniform{color.White}, image.Point{}, draw.Src)
+
+	draw.Draw(newImg, newImg.Bounds(), imgSrc, imgSrc.Bounds().Min, draw.Over)
+
+	jpgImgFile, _ := os.Create(pngImg + ".jpg")
+
+	var opt jpeg.Options
+	opt.Quality = 80
+
+	err = jpeg.Encode(jpgImgFile, newImg, &opt)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	pngImgFile.Close()
+	jpgImgFile.Close()
+
+	err = os.Remove(pngImg)
+
+	return pngImg + ".jpg"
 }
