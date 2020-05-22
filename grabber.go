@@ -24,12 +24,14 @@ import (
 	"github.com/jung-kurt/gofpdf"
 )
 
-const dpi = 96
-const mmInInch = 25.4
-const a4Height = 297
-const a4Width = 210
-const maxHeight = 1122
-const maxWidth = 793
+const (
+	dpi       = 96
+	mmInInch  = 25.4
+	a4Height  = 297
+	a4Width   = 210
+	maxHeight = 1122
+	maxWidth  = 793
+)
 
 var mangaChapters []string
 
@@ -66,8 +68,8 @@ func main() {
 		os.Exit(0)
 	}
 
-	if urlParts.Host != "readmanga.me" && urlParts.Host != "mintmanga.com" && urlParts.Host != "selfmanga.ru" {
-		fmt.Println("Указан некорректный адрес манги! Скачивание доступно только с сайтов readmanga.me, mintmanga.com и selfmanga.ru.\n")
+	if urlParts.Host != "readmanga.me" && urlParts.Host != "mintmanga.live" && urlParts.Host != "selfmanga.ru" {
+		fmt.Println("Указан некорректный адрес манги! Скачивание доступно только с сайтов readmanga.me, mintmanga.live и selfmanga.ru.\n")
 		os.Exit(0)
 	}
 
@@ -147,7 +149,7 @@ func downloadChapters(mangaHost, mangaName string, createPdf, createZip, deleteS
 			}
 
 			client := grab.NewClient()
-			client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36"
+			client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"
 
 			respch := client.DoBatch(2, imagesReqs...)
 
@@ -173,7 +175,7 @@ func downloadChapters(mangaHost, mangaName string, createPdf, createZip, deleteS
 			if createPdf {
 				fmt.Println("- Создаю PDF для главы " + mangaChapters[i] + ".")
 
-				createPDF("Downloads/" + mangaName + "/" + mangaChapters[i])
+				createPDF("Downloads/"+mangaName+"/"+mangaChapters[i], imageLinks)
 
 				if deleteSource {
 					os.RemoveAll("Downloads/" + mangaName + "/" + mangaChapters[i])
@@ -188,7 +190,7 @@ func downloadChapters(mangaHost, mangaName string, createPdf, createZip, deleteS
 func getImageLinks(chapterURL string) []string {
 	var imageLinks []string
 
-	resp, err := http.Get(chapterURL + "?mature=1")
+	resp, err := http.Get(chapterURL + "?mtr=1")
 	if err != nil {
 		return imageLinks
 	}
@@ -211,17 +213,19 @@ func getImageLinks(chapterURL string) []string {
 		for i := 0; i < len(imageParts); i++ {
 			tmpParts := strings.Split(imageParts[i], ",")
 
-			imageLinks = append(imageLinks, strings.Trim(tmpParts[1], "\"'")+strings.Trim(tmpParts[0], "\"'")+strings.Trim(tmpParts[2], "\"'"))
+			imageLinks = append(imageLinks, strings.Trim(tmpParts[0], "\"'")+strings.Trim(tmpParts[2], "\"'"))
 		}
 	}
 
 	return imageLinks
 }
 
-func createPDF(path string) {
-	images, err := ioutil.ReadDir(path)
-	if err != nil {
-		log.Fatal(err)
+func createPDF(path string, imageLinks []string) {
+	var images []string
+
+	for x := 0; x < len(imageLinks); x++ {
+		fileURL, _ := url.Parse(imageLinks[x])
+		images = append(images, filepath.Base(fileURL.Path))
 	}
 
 	var opt gofpdf.ImageOptions
@@ -229,18 +233,23 @@ func createPDF(path string) {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 
 	for _, i := range images {
-		width, height := resizeToFit(path + "/" + i.Name())
+		width, height := resizeToFit(path + "/" + i)
+
+		imageFile := checkImg(path + "/" + i)
+		if imageFile == "SKIP" {
+			continue
+		}
 
 		if width < height {
 			pdf.AddPage()
-			pdf.ImageOptions(checkImg(path+"/"+i.Name()), (a4Width-width)/2, (a4Height-height)/2, width, height, false, opt, 0, "")
+			pdf.ImageOptions(imageFile, (a4Width-width)/2, (a4Height-height)/2, width, height, false, opt, 0, "")
 		} else {
 			pdf.AddPageFormat("L", pdf.GetPageSizeStr("A4"))
-			pdf.ImageOptions(checkImg(path+"/"+i.Name()), (a4Height-width)/2, (a4Width-height)/2, width, height, false, opt, 0, "")
+			pdf.ImageOptions(imageFile, (a4Height-width)/2, (a4Width-height)/2, width, height, false, opt, 0, "")
 		}
 	}
 
-	err = pdf.OutputFileAndClose(path + ".pdf")
+	err := pdf.OutputFileAndClose(path + ".pdf")
 	if err != nil {
 		fmt.Println("- Ошибка создания PDF файла: ", err.Error())
 	}
@@ -299,8 +308,12 @@ func convertPng(pngImg string) string {
 
 	imgSrc, err := png.Decode(pngImgFile)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		fmt.Println("-- Skipping file: " + pngImg)
+		fmt.Println("-- " + err.Error())
+
+		pngImgFile.Close()
+
+		return "SKIP"
 	}
 
 	newImg := image.NewRGBA(imgSrc.Bounds())
