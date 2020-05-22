@@ -140,7 +140,11 @@ func downloadChapters(mangaHost, mangaName string, createPdf, createZip, deleteS
 			imagesReqs := make([]*grab.Request, 0)
 
 			for x := 0; x < len(imageLinks); x++ {
-				imageReq, _ := grab.NewRequest("Downloads/"+mangaName+"/"+mangaChapters[i], imageLinks[x])
+
+				ttmmpp:= strings.Split(imageLinks[x], "/manga/")
+				nimglink := ttmmpp[1]
+
+				imageReq, _ := grab.NewRequest("Downloads/"+mangaName+"/"+mangaChapters[i], nimglink)
 				imageReq.HTTPRequest.Header.Set("Referer", url+mangaChapters[i])
 
 				imagesReqs = append(imagesReqs, imageReq)
