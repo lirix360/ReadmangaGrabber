@@ -17,11 +17,12 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/cavaliercoder/grab"
 	"github.com/jhoonb/archivex"
-	"github.com/jung-kurt/gofpdf"
+	"github.com/phpdave11/gofpdf"
 )
 
 const (
@@ -44,6 +45,7 @@ func main() {
 		fmt.Println(" -url=адрес_манги\tАдрес страницы описания манги или отдельной главы")
 		fmt.Println(" -pdf\t\t\tСоздание PDF файлов для каждой главы после скачивания")
 		fmt.Println(" -zip\t\t\tСоздание ZIP архивов для каждой главы после скачивания")
+		fmt.Println(" -cbz\t\t\tСоздание CBZ архивов для каждой главы после скачивания")
 		fmt.Println(" -delete\t\tУдалить исходные файлы после создания PDF или архивации (используется только вместе с флагами -pdf или -zip)\n")
 		fmt.Println("Список глав для скачивания указывается через пробел в формате том/глава (пример: vol1/5 vol10/65)\n")
 	}
@@ -51,6 +53,7 @@ func main() {
 	urlPtr := flag.String("url", "", "Адрес страницы описания манги или отдельной главы главы")
 
 	zipPtr := flag.Bool("zip", false, "Создать ZIP архивы для каждой главы после скачивания")
+	cbzPtr := flag.Bool("cbz", false, "Создать CBZ архивы для каждой главы после скачивания")
 	delPtr := flag.Bool("delete", false, "Удалить исходные файлы после архивации")
 
 	pdfPtr := flag.Bool("pdf", false, "Создать PDF файлы для каждой главы после скачивания")
@@ -68,7 +71,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if urlParts.Host != "readmanga.me" && urlParts.Host != "mintmanga.live" && urlParts.Host != "selfmanga.ru" {
+	if urlParts.Host != "readmanga.me" && urlParts.Host != "mintmanga.live" && urlParts.Host != "selfmanga.ru" && urlParts.Host != "allhentai.ru" {
 		fmt.Println("Указан некорректный адрес манги! Скачивание доступно только с сайтов readmanga.me, mintmanga.live и selfmanga.ru.\n")
 		os.Exit(0)
 	}
@@ -91,7 +94,7 @@ func main() {
 	if len(mangaChapters) > 0 {
 		fmt.Println("Начинаю скачивание.")
 
-		downloadChapters(urlParts.Host, pathParts[0], *pdfPtr, *zipPtr, *delPtr)
+		downloadChapters(urlParts.Host, pathParts[0], *pdfPtr, *zipPtr, *cbzPtr, *delPtr)
 
 		fmt.Println("Скачивание завершено.")
 	} else {
@@ -126,7 +129,7 @@ func getChapters(mangaURL string) {
 	}
 }
 
-func downloadChapters(mangaHost, mangaName string, createPdf, createZip, deleteSource bool) {
+func downloadChapters(mangaHost, mangaName string, createPdf, createZip, createCbz, deleteSource bool) {
 	url := "http://" + mangaHost + "/" + mangaName + "/"
 
 	for i := 0; i < len(mangaChapters); i++ {
@@ -149,7 +152,7 @@ func downloadChapters(mangaHost, mangaName string, createPdf, createZip, deleteS
 			}
 
 			client := grab.NewClient()
-			client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"
+			client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Safari/537.36"
 
 			respch := client.DoBatch(2, imagesReqs...)
 
@@ -159,26 +162,41 @@ func downloadChapters(mangaHost, mangaName string, createPdf, createZip, deleteS
 				}
 			}
 
-			if createZip {
-				fmt.Println("- Архивирую главу " + mangaChapters[i] + ".")
+			var wg sync.WaitGroup
 
-				zip := new(archivex.ZipFile)
-				zip.Create("Downloads/" + mangaName + "/" + mangaChapters[i] + ".zip")
-				zip.AddAll("Downloads/"+mangaName+"/"+mangaChapters[i], true)
-				zip.Close()
+			if createZip || createCbz {
+				wg.Add(1)
 
-				if deleteSource && !createPdf {
-					os.RemoveAll("Downloads/" + mangaName + "/" + mangaChapters[i])
-				}
+				go func(mangaName, mangaChapter string, wg *sync.WaitGroup) {
+					defer wg.Done()
+
+					fmt.Println("- Архивирую главу " + mangaChapter + ".")
+
+					zip := new(archivex.ZipFile)
+					zip.Create("Downloads/" + mangaName + "/" + mangaChapter + ".zip")
+					zip.AddAll("Downloads/"+mangaName+"/"+mangaChapter, true)
+					zip.Close()
+				}(mangaName, mangaChapters[i], &wg)
 			}
 
 			if createPdf {
+				wg.Add(1)
+
 				fmt.Println("- Создаю PDF для главы " + mangaChapters[i] + ".")
 
-				createPDF("Downloads/"+mangaName+"/"+mangaChapters[i], imageLinks)
+				go createPDF("Downloads/"+mangaName+"/"+mangaChapters[i], imageLinks, &wg)
+			}
 
-				if deleteSource {
-					os.RemoveAll("Downloads/" + mangaName + "/" + mangaChapters[i])
+			wg.Wait()
+
+			if createCbz {
+				os.Rename("Downloads/"+mangaName+"/"+mangaChapters[i]+".zip", "Downloads/"+mangaName+"/"+mangaChapters[i]+".cbz")
+			}
+
+			if deleteSource {
+				err := os.RemoveAll("Downloads/" + mangaName + "/" + mangaChapters[i])
+				if err != nil {
+					fmt.Println("--- Error on file deletion:", err.Error())
 				}
 			}
 		} else {
@@ -220,7 +238,9 @@ func getImageLinks(chapterURL string) []string {
 	return imageLinks
 }
 
-func createPDF(path string, imageLinks []string) {
+func createPDF(path string, imageLinks []string, wg *sync.WaitGroup) {
+	defer wg.Done()
+
 	var images []string
 
 	for x := 0; x < len(imageLinks); x++ {
@@ -282,6 +302,7 @@ func getImageDimension(imagePath string) (float64, float64) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer file.Close()
 
 	image, _, err := image.DecodeConfig(file)
 	if err != nil {
