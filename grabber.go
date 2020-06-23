@@ -1,6 +1,7 @@
 package main
 
 import (
+	"compress/flate"
 	"flag"
 	"fmt"
 	"image"
@@ -21,7 +22,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/cavaliercoder/grab"
-	"github.com/jhoonb/archivex"
+	"github.com/mholt/archiver"
 	"github.com/phpdave11/gofpdf"
 )
 
@@ -172,10 +173,20 @@ func downloadChapters(mangaHost, mangaName string, createPdf, createZip, createC
 
 					fmt.Println("- Архивирую главу " + mangaChapter + ".")
 
-					zip := new(archivex.ZipFile)
-					zip.Create("Downloads/" + mangaName + "/" + mangaChapter + ".zip")
-					zip.AddAll("Downloads/"+mangaName+"/"+mangaChapter, true)
-					zip.Close()
+					z := archiver.Zip{
+						CompressionLevel:       flate.NoCompression,
+						MkdirAll:               true,
+						SelectiveCompression:   true,
+						ContinueOnError:        false,
+						OverwriteExisting:      false,
+						ImplicitTopLevelFolder: false,
+					}
+
+					err := z.Archive([]string{"Downloads/" + mangaName + "/" + mangaChapter}, "Downloads/"+mangaName+"/"+mangaChapter+".zip")
+					if err != nil {
+						fmt.Println("-- Ошибка при создании архива:", err.Error())
+					}
+					z.Close()
 				}(mangaName, mangaChapters[i], &wg)
 			}
 
@@ -190,13 +201,16 @@ func downloadChapters(mangaHost, mangaName string, createPdf, createZip, createC
 			wg.Wait()
 
 			if createCbz {
-				os.Rename("Downloads/"+mangaName+"/"+mangaChapters[i]+".zip", "Downloads/"+mangaName+"/"+mangaChapters[i]+".cbz")
+				err := os.Rename("Downloads/"+mangaName+"/"+mangaChapters[i]+".zip", "Downloads/"+mangaName+"/"+mangaChapters[i]+".cbz")
+				if err != nil {
+					fmt.Println("-- Ошибка при переименовании архива:", err.Error())
+				}
 			}
 
 			if deleteSource {
 				err := os.RemoveAll("Downloads/" + mangaName + "/" + mangaChapters[i])
 				if err != nil {
-					fmt.Println("--- Error on file deletion:", err.Error())
+					fmt.Println("-- Ошибка при удалении файлов:", err.Error())
 				}
 			}
 		} else {
