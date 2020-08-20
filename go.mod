@@ -12,7 +12,7 @@ require (
 	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/phpdave11/gofpdf v1.4.2
 	github.com/pierrec/lz4 v2.5.2+incompatible // indirect
-	github.com/ulikunitz/xz v0.5.7 // indirect
+	github.com/ulikunitz/xz v0.5.8 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	golang.org/x/net v0.0.0-20200602114024-627f9648deb9 // indirect
+	golang.org/x/net v0.0.0-20200813134508-3edf25e44fcc // indirect
 )

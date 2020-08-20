@@ -72,8 +72,8 @@ func main() {
 		os.Exit(0)
 	}
 
-	if urlParts.Host != "readmanga.me" && urlParts.Host != "mintmanga.live" && urlParts.Host != "selfmanga.ru" && urlParts.Host != "allhentai.ru" {
-		fmt.Println("Указан некорректный адрес манги! Скачивание доступно только с сайтов readmanga.me, mintmanga.live и selfmanga.ru.\n")
+	if urlParts.Host != "readmanga.live" && urlParts.Host != "mintmanga.live" && urlParts.Host != "selfmanga.ru" && urlParts.Host != "allhentai.ru" {
+		fmt.Println("Указан некорректный адрес манги! Скачивание доступно только с сайтов readmanga.live, mintmanga.live и selfmanga.ru.\n")
 		os.Exit(0)
 	}
 
