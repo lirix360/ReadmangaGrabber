@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300&display=swap" rel="stylesheet">
+    <title>Manga Grabber</title>
+    <style>
+        html {
+            padding: 0;
+            margin: 0;
+        }
+
+        body {
+            padding: 10px;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .log {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card border-secondary">
+            <div class="card-header text-white bg-secondary">Manga Grabber</div>
+            <div class="card-body bg-transparent">
+                <p>Manga Grabber - утилита для скачивания манги с ресурсов ReadManga, MintManga, SelfManga и MangaLib.</p>
+                <hr />
+                <form>
+                    <div id="optionsSection">
+                        <div class="mb-3">
+                            <label for="mangaURL" class="form-label">Настройки</label><br />
+                            <div class="form-check form-check-inline form-switch">
+                                <input class="form-check-input opt-data" type="checkbox" id="optPDF" onchange="checkDeleteOption();">
+                                <label class="form-check-label" for="optPDF">Создать PDF</label>
+                            </div>
+                            <div class="form-check form-check-inline form-switch">
+                                <input class="form-check-input opt-data" type="checkbox" id="optCBZ" onchange="checkDeleteOption();">
+                                <label class="form-check-label" for="optCBZ">Создать CBZ</label>
+                            </div>
+                            <div class="form-check form-check-inline form-switch">
+                                <input class="form-check-input opt-data" type="checkbox" id="optDEL" disabled>
+                                <label class="form-check-label" for="optDEL">Удалить скачанные файлы после создания PDF/CBZ</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="mangaURL" class="form-label">Адрес манги</label>
+                            <input type="text" class="form-control opt-data" id="mangaURL" required>
+                            <div id="mangaURLHelp" class="form-text">Адрес страницы со списком глав (например: https://readmanga.live/the_disappearance_of_yuki_nagato или https://mangalib.me/kinjo-no-nanako-san)</div>
+                        </div>
+                        <div class="mb-3" style="text-align: center;">
+                            <button type="button" class="btn btn-primary opt-data" id="getChaptersListBtn" onclick="getChaptersList();">Получить список глав</button>
+                            <button type="button" class="btn btn-success opt-data" id="downloadAllChaptersBtn" onclick="downloadManga('all');">Скачать все главы</button>
+                        </div>
+                    </div>
+                    <div id="waitSection" style="display: none;">
+                        <hr />
+                        <div class="text-center">
+                            <div class="spinner-border text-info" role="status">
+                              <span class="visually-hidden">Идет загрузка...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="errorSection" style="display: none;">
+                        <hr />
+                        <div class="alert alert-danger" id="errorData" role="alert"></div>
+                    </div>
+                    <div id="successSection" style="display: none;">
+                        <hr />
+                        <div class="alert alert-success" id="successData" role="alert"></div>
+                    </div>
+                    <div id="chaptersSection" style="display: none;">
+                        <hr />
+                        <div class="mb-3">
+                            <label for="formFile" class="form-label">Скачать главы:</label>
+                            <div class="row row-cols-4" id="chaptersList"></div>
+                        </div>
+                        <div class="mb-3" style="text-align: center;">
+                            <button type="button" class="btn btn-success" id="downloadAllChaptersBtn" onclick="downloadManga('chapters');">Скачать выбранные главы</button>
+                        </div>
+                    </div>
+                    <div id="downloadSection" style="display: none;">
+                        <hr />
+                        <div class="mb-3">
+                            <p>Идет скачивание:</p>
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped bg-info progress-bar-animated" id="progressBar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="card card-body log" id="log" style="max-height: 250px; overflow-y: auto;"></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+          </div>
+    </div>
+
+    <script>
+        var ws = new WebSocket("ws://127.0.0.1:8888/ws");
+
+        ws.onmessage = function(msg) {
+            var data = JSON.parse(msg.data);
+
+            console.log(data);
+
+            switch (data.cmd) {
+                case 'closeApp':
+                    window.close();
+                    break;
+                case 'initProgress':
+                    $('#chaptersSection').hide();
+                    $('#log').html('');
+                    $('#progressBar').prop("aria-valuenow", data.payload.valNow)
+                    $('#progressBar').prop("aria-valuemax", data.payload.valMax)
+                    $('#progressBar').css("width", data.payload.width+"%")
+                    $('#downloadSection').show();
+                    break;
+                case 'updateProgress':
+                    $('#progressBar').prop("aria-valuenow", data.payload.valNow)
+                    $('#progressBar').css("width", data.payload.width+"%")
+                    break;
+                case 'updateLog':
+                    if (data.payload.type == "err") {
+                        $('#log').append('<span style="color: red;">' + data.payload.text + '</span><br />')
+                    } else {
+                        $('#log').append(data.payload.text + '<br />')
+                    }
+                    //var elem = document.getElementById('log');
+                    $('#log').scrollTop = elem.scrollHeight;
+                    break;
+                case 'downloadComplete':
+                    $('#downloadSection').hide();
+                    $('#successData').html(data.payload.text);
+                    $('#successSection').show();
+                    break;
+            }
+        }
+
+        function testWS() {
+            ws.send("TEST");
+        }
+
+        window.addEventListener("beforeunload", function (e) {
+            $.get("/closeApp");
+            return null;
+        });
+
+        function checkDeleteOption() {
+            if ($('#optPDF').is(':checked') || $('#optCBZ').is(':checked')) {
+                $('#optDEL').prop("disabled", false);
+            } else {
+                $('#optDEL').prop("disabled", true);
+            }
+        }
+
+        function getChaptersList() {
+            $('.opt-data').prop('disabled', true);
+            $('#downloadSection').hide();
+            $('#successSection').hide();
+            $('#chaptersSection').hide();
+            $('#errorSection').hide();
+            $('#waitSection').show();
+            $('#chaptersList').html("");
+
+            $.get("/getChaptersList", { "mangaURL": $('#mangaURL').val() }, function(data) {
+                switch (data.status) {
+                    case 'success':
+                        $.each(data.payload, function(i, item) {
+                            var html = "<div class='col'><div class='form-check'><input class='form-check-input single-chapter' type='checkbox' id='"+item.path+"' value='"+item.path+"'><label class='form-check-label' for='"+item.path+"'>"+item.title+"</label></div></div>";
+
+                            $('#chaptersList').append(html);
+                        });
+
+                        $('#waitSection').hide();
+                        $('#chaptersSection').show();
+                        break;
+                    case 'error':
+                        $('#errorData').html(data.payload);
+                        $('#waitSection').hide();
+                        $('#errorSection').show();
+                        break;
+                }
+            });
+
+            $('.opt-data').prop('disabled', false);
+            checkDeleteOption();
+        }
+
+        function downloadManga(type) {
+            $('#downloadSection').hide();
+            $('#successSection').hide();
+            $('#chaptersSection').hide();
+
+            var optPDF = $('#optPDF').is(':checked') ? 1 : 0;
+            var optCBZ = $('#optCBZ').is(':checked') ? 1 : 0;
+            var optDEL = ($('#optPDF').is(':checked') || $('#optCBZ').is(':checked')) && $('#optDEL').is(':checked') ? 1 : 0;
+
+            var chapters = [];
+
+            if (type == 'chapters') {
+                $('.single-chapter:checked').each(function() {
+                    chapters.push($(this).val());
+                });
+            }
+
+            var chaptersJSON = JSON.stringify(chapters);
+
+            $.get("/downloadManga", {
+                "downloadType": type,
+                "mangaURL": $('#mangaURL').val(),
+                "optPDF": optPDF,
+                "optCBZ": optCBZ,
+                "optDEL": optDEL,
+                "selectedChapters": chaptersJSON
+            }, function(data) {});
+        }
+    </script>
+</body>
+</html>
