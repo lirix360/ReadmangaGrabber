@@ -9,3 +9,5 @@
 * Создание CBZ файлов для скачанных глав
 
 **Возможности скачивания платной манги нет и не будет!**
+
+![Интерфейс](https://lirix360.github.io/ReadmangaGrabber/screenshot.png?raw=true)
