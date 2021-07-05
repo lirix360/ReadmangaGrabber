@@ -2,13 +2,13 @@ package manga
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 
 	"github.com/goware/urlx"
 
 	"github.com/lirix360/ReadmangaGrabber/data"
+	"github.com/lirix360/ReadmangaGrabber/logger"
 	"github.com/lirix360/ReadmangaGrabber/mangalib"
 	"github.com/lirix360/ReadmangaGrabber/readmanga"
 )
@@ -30,13 +30,13 @@ func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 		chaptersList, err = mangalib.GetChaptersList(mangaURL)
 		if err != nil {
 			hasError = true
-			log.Println("Ошибка при получении списка глав:", err)
+			logger.Log.Error("Ошибка при получении списка глав:", err)
 		}
 	case "readmanga.live", "mintmanga.live", "selfmanga.live", "wwv.allhen.live":
 		chaptersList, err = readmanga.GetChaptersList(mangaURL)
 		if err != nil {
 			hasError = true
-			log.Println("Ошибка при получении списка глав:", err)
+			logger.Log.Error("Ошибка при получении списка глав:", err)
 		}
 	default:
 		hasError = true

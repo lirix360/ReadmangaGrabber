@@ -5,30 +5,37 @@ import (
 	"image/color"
 	"image/draw"
 	"image/jpeg"
-	"log"
 	"math"
 	"os"
 	"path/filepath"
-	"sync"
 
 	_ "image/gif"
 	_ "image/png"
 
 	"github.com/lirix360/ReadmangaGrabber/data"
+	"github.com/lirix360/ReadmangaGrabber/logger"
 
 	"github.com/phpdave11/gofpdf"
 )
 
 // CreatePDF - ...
-func CreatePDF(chapterPath string, savedFiles []string, wg *sync.WaitGroup) error {
-	defer wg.Done()
-
+func CreatePDF(chapterPath string, savedFiles []string) error {
 	var opt gofpdf.ImageOptions
 
 	pdf := gofpdf.New("P", "mm", "A4", "")
 
 	for _, file := range savedFiles {
-		width, height := resizeToFit(file)
+		width, height, err := resizeToFit(file)
+		if err != nil {
+			data.WSChan <- data.WSData{
+				Cmd: "updateLog",
+				Payload: map[string]interface{}{
+					"type": "err",
+					"text": "-- Ошибка при создании PDF файла (" + chapterPath + ".pdf):" + err.Error(),
+				},
+			}
+			return err
+		}
 
 		imageFile, err := convertImg(file)
 		if err != nil {
@@ -53,7 +60,7 @@ func CreatePDF(chapterPath string, savedFiles []string, wg *sync.WaitGroup) erro
 
 	err := pdf.OutputFileAndClose(chapterPath + ".pdf")
 	if err != nil {
-		log.Println("Ошибка создания PDF файла ("+chapterPath+".pdf):", err.Error())
+		logger.Log.Error("Ошибка при создании PDF файла ("+chapterPath+".pdf):", err)
 		data.WSChan <- data.WSData{
 			Cmd: "updateLog",
 			Payload: map[string]interface{}{
@@ -66,16 +73,19 @@ func CreatePDF(chapterPath string, savedFiles []string, wg *sync.WaitGroup) erro
 
 	err = os.RemoveAll(chapterPath + "/pdf")
 	if err != nil {
-		log.Println(err)
+		logger.Log.Error("Ошибка при удалении временных файлов PDF:", err)
 	}
 
 	return nil
 }
 
-func resizeToFit(imgFilename string) (float64, float64) {
+func resizeToFit(imgFilename string) (float64, float64, error) {
 	var widthScale, heightScale float64
 
-	width, height := getImageDimension(imgFilename)
+	width, height, err := getImageDimension(imgFilename)
+	if err != nil {
+		return 0, 0, err
+	}
 
 	if width < height {
 		widthScale = data.PDFOpts.MaxWidth / width
@@ -87,7 +97,7 @@ func resizeToFit(imgFilename string) (float64, float64) {
 
 	scale := math.Min(widthScale, heightScale)
 
-	return math.Round(pixelsToMM(scale * width)), math.Round(pixelsToMM(scale * height))
+	return math.Round(pixelsToMM(scale * width)), math.Round(pixelsToMM(scale * height)), nil
 }
 
 func convertImg(srcImg string) (string, error) {
@@ -100,13 +110,18 @@ func convertImg(srcImg string) (string, error) {
 
 	imgSrc, _, err := image.Decode(imgFile)
 	if err != nil {
-		log.Println("-- Skipping file ("+srcImg+"):", err)
+		logger.Log.Error("Ошибка при декодировании файла ("+srcImg+"):", err)
 		imgFile.Close()
 		return "", err
 	}
 
-	if _, err := os.Stat(dstPath); os.IsNotExist(err) {
-		os.MkdirAll(dstPath, 0755)
+	if _, err = os.Stat(dstPath); os.IsNotExist(err) {
+		err = os.MkdirAll(dstPath, 0755)
+		if err != nil {
+			logger.Log.Error("Ошибка при создании временной папки PDF:", err)
+			imgFile.Close()
+			return "", err
+		}
 	}
 
 	newImg := image.NewRGBA(imgSrc.Bounds())
@@ -114,14 +129,19 @@ func convertImg(srcImg string) (string, error) {
 	draw.Draw(newImg, newImg.Bounds(), &image.Uniform{color.White}, image.Point{}, draw.Src)
 	draw.Draw(newImg, newImg.Bounds(), imgSrc, imgSrc.Bounds().Min, draw.Over)
 
-	jpgFile, _ := os.Create(dstFile)
+	jpgFile, err := os.Create(dstFile)
+	if err != nil {
+		logger.Log.Error("Ошибка при создании временного файла ("+dstFile+"):", err)
+		imgFile.Close()
+		return "", err
+	}
 
 	var opt jpeg.Options
 	opt.Quality = 90
 
 	err = jpeg.Encode(jpgFile, newImg, &opt)
 	if err != nil {
-		log.Println(err)
+		logger.Log.Error("Ошибка при записи временного файла ("+dstFile+"):", err)
 		imgFile.Close()
 		jpgFile.Close()
 		return "", err
@@ -133,19 +153,21 @@ func convertImg(srcImg string) (string, error) {
 	return dstFile, nil
 }
 
-func getImageDimension(imagePath string) (float64, float64) {
+func getImageDimension(imagePath string) (float64, float64, error) {
 	file, err := os.Open(imagePath)
 	if err != nil {
-		log.Fatal(err)
+		logger.Log.Error("Ошибка при открытии файла:", err)
+		return 0, 0, err
 	}
 	defer file.Close()
 
 	image, _, err := image.DecodeConfig(file)
 	if err != nil {
-		log.Fatalln("TEST", err)
+		logger.Log.Error("Ошибка при обработке файла:", err)
+		return 0, 0, err
 	}
 
-	return float64(image.Width), float64(image.Height)
+	return float64(image.Width), float64(image.Height), nil
 }
 
 func pixelsToMM(val float64) float64 {

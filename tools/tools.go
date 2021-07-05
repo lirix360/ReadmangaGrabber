@@ -4,20 +4,19 @@ import (
 	"compress/flate"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"runtime"
-	"sync"
 
 	scraper "github.com/byung82/go-cloudflare-scraper"
 	"github.com/mholt/archiver"
 
 	"github.com/lirix360/ReadmangaGrabber/data"
+	"github.com/lirix360/ReadmangaGrabber/logger"
 )
 
-// OpenBrowser - open browser window with grabber main page
+// OpenBrowser - ...
 func OpenBrowser(url string) error {
 	var err error
 
@@ -71,28 +70,40 @@ func GetPageCF(pageURL string) ([]byte, error) {
 }
 
 // CreateCBZ - ...
-func CreateCBZ(chapterPath string, wg *sync.WaitGroup) error {
-	defer wg.Done()
-
+func CreateCBZ(chapterPath string) error {
 	z := archiver.Zip{
 		CompressionLevel:       flate.NoCompression,
 		MkdirAll:               true,
 		SelectiveCompression:   true,
 		ContinueOnError:        false,
-		OverwriteExisting:      false,
+		OverwriteExisting:      true,
 		ImplicitTopLevelFolder: false,
 	}
 
 	err := z.Archive([]string{chapterPath}, chapterPath+".zip")
 	if err != nil {
-		log.Println("Ошибка при создании архива ("+chapterPath+".zip):", err)
+		logger.Log.Error("Ошибка при создании архива ("+chapterPath+".zip):", err)
+		data.WSChan <- data.WSData{
+			Cmd: "updateLog",
+			Payload: map[string]interface{}{
+				"type": "err",
+				"text": "-- Ошибка при создании CBZ:" + err.Error(),
+			},
+		}
 		return err
 	}
-	z.Close()
+	defer z.Close()
 
 	err = os.Rename(chapterPath+".zip", chapterPath+".cbz")
 	if err != nil {
-		log.Println("Ошибка при переименовании архива ("+chapterPath+".zip):", err)
+		logger.Log.Error("Ошибка при переименовании архива ("+chapterPath+".zip):", err)
+		data.WSChan <- data.WSData{
+			Cmd: "updateLog",
+			Payload: map[string]interface{}{
+				"type": "err",
+				"text": "-- Ошибка при создании CBZ:" + err.Error(),
+			},
+		}
 		return err
 	}
 

@@ -3,7 +3,6 @@ package main
 import (
 	"embed"
 	"encoding/json"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,7 +12,9 @@ import (
 	"github.com/gorilla/mux"
 	"gopkg.in/olahol/melody.v1"
 
+	"github.com/lirix360/ReadmangaGrabber/config"
 	"github.com/lirix360/ReadmangaGrabber/data"
+	"github.com/lirix360/ReadmangaGrabber/logger"
 	"github.com/lirix360/ReadmangaGrabber/manga"
 	"github.com/lirix360/ReadmangaGrabber/tools"
 )
@@ -24,27 +25,27 @@ var webUI embed.FS
 func main() {
 	var err error
 
+	logger.Log.Info("Запуск приложения!")
+
 	r := mux.NewRouter()
 	m := melody.New()
+
+	r.HandleFunc("/saveConfig", config.SaveConfig)
+	r.HandleFunc("/loadConfig", config.LoadConfig)
 
 	r.HandleFunc("/getChaptersList", manga.GetChaptersList)
 	r.HandleFunc("/downloadManga", manga.DownloadManga)
 
 	r.HandleFunc("/closeApp", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Закрытие приложения...")
+		logger.Log.Info("Закрытие приложения...")
 		os.Exit(0)
 	})
 
 	r.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		err := m.HandleRequest(w, r)
 		if err != nil {
-			log.Println(err)
+			logger.Log.Error("Ошибка при обработке данных WS:", err)
 		}
-	})
-
-	m.HandleMessage(func(s *melody.Session, msg []byte) {
-		log.Println(string(msg))
-		m.Broadcast(msg)
 	})
 
 	go func() {
@@ -52,12 +53,12 @@ func main() {
 			msgData := <-data.WSChan
 			wsData, err := json.Marshal(msgData)
 			if err != nil {
-				log.Println("Ошибка при сериализации данных для отправки через WS:", err)
+				logger.Log.Error("Ошибка при сериализации данных для отправки через WS:", err)
 				continue
 			}
 			err = m.Broadcast(wsData)
 			if err != nil {
-				log.Println("Ошибка при отправке данных через WS:", err)
+				logger.Log.Error("Ошибка при отправке данных через WS:", err)
 				continue
 			}
 		}
@@ -75,7 +76,7 @@ func main() {
 
 	err = tools.OpenBrowser("http://127.0.0.1:8888/")
 	if err != nil {
-		log.Fatalln(err)
+		logger.Log.Fatal("Ошибка при открытии браузера:", err)
 	}
 
 	signalChan := make(chan os.Signal, 1)
@@ -83,10 +84,12 @@ func main() {
 	go func() {
 		<-signalChan
 		data.WSChan <- data.WSData{Cmd: "closeApp"}
-		log.Println("Закрытие приложения...")
-		// time.Sleep(1 * time.Second)
+		logger.Log.Info("Закрытие приложения...")
 		os.Exit(0)
 	}()
 
-	log.Fatal("Ошибка при запуске веб-сервера:", srv.ListenAndServe())
+	err = srv.ListenAndServe()
+	if err != nil {
+		logger.Log.Fatal("Ошибка при запуске веб-сервера:", err)
+	}
 }

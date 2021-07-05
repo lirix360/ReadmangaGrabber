@@ -2,17 +2,17 @@ package mangalib
 
 import (
 	"encoding/json"
-	"log"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/cavaliercoder/grab"
 
+	"github.com/lirix360/ReadmangaGrabber/config"
 	"github.com/lirix360/ReadmangaGrabber/data"
+	"github.com/lirix360/ReadmangaGrabber/logger"
 	"github.com/lirix360/ReadmangaGrabber/pdf"
 	"github.com/lirix360/ReadmangaGrabber/tools"
 )
@@ -85,6 +85,7 @@ func DownloadManga(downData data.DownloadOpts) error {
 	case "all":
 		chaptersList, err = GetChaptersList(downData.MangaURL)
 		if err != nil {
+			logger.Log.Error("Ошибка при получении списка глав:", err)
 			return err
 		}
 		time.Sleep(1 * time.Second)
@@ -111,11 +112,20 @@ func DownloadManga(downData data.DownloadOpts) error {
 	}
 
 	for _, chapter := range chaptersList {
-		DownloadChapter(downData, chapter)
+		err = DownloadChapter(downData, chapter)
+		if err != nil {
+			data.WSChan <- data.WSData{
+				Cmd: "updateLog",
+				Payload: map[string]interface{}{
+					"type": "err",
+					"text": "-- Ошибка при скачивании главы:" + err.Error(),
+				},
+			}
+		}
 
 		chaptersCur++
 
-		time.Sleep(3 * time.Second)
+		time.Sleep(time.Duration(config.Cfg.Mangalib.TimeoutChapter) * time.Microsecond)
 
 		data.WSChan <- data.WSData{
 			Cmd: "updateProgress",
@@ -166,13 +176,13 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) e
 
 	err = json.Unmarshal([]byte(rawInfo), &info)
 	if err != nil {
-		log.Println("UNM1")
+		logger.Log.Error("Ошибка при распаковке данных (Info):", err)
 		return err
 	}
 
 	err = json.Unmarshal([]byte(rawPages), &pages)
 	if err != nil {
-		log.Println("UNM2")
+		logger.Log.Error("Ошибка при распаковке данных (Pages):", err)
 		return err
 	}
 
@@ -205,22 +215,20 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) e
 		req, err := grab.NewRequest(chapterPath, imgURL)
 		// req.HTTPRequest.Header.Set("Referer", chapterURL)
 		if err != nil {
-			log.Println("Grab req:", err)
+			logger.Log.Error("Ошибка при скачивании страницы:", err)
+			return err
 		}
 		resp := client.Do(req)
 		if resp.Err() != nil {
-			log.Println("Grab resp:", resp.Err())
+			logger.Log.Error("Ошибка при скачивании страницы:", resp.Err())
+			return err
 		}
 		savedFiles = append(savedFiles, resp.Filename)
 
-		time.Sleep(1 * time.Second)
+		time.Sleep(time.Duration(config.Cfg.Mangalib.TimeoutImage) * time.Microsecond)
 	}
 
-	var wg sync.WaitGroup
-
 	if downData.CBZ == "1" {
-		wg.Add(1)
-
 		data.WSChan <- data.WSData{
 			Cmd: "updateLog",
 			Payload: map[string]interface{}{
@@ -229,12 +237,10 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) e
 			},
 		}
 
-		tools.CreateCBZ(chapterPath, &wg)
+		tools.CreateCBZ(chapterPath)
 	}
 
 	if downData.PDF == "1" {
-		wg.Add(1)
-
 		data.WSChan <- data.WSData{
 			Cmd: "updateLog",
 			Payload: map[string]interface{}{
@@ -243,15 +249,13 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) e
 			},
 		}
 
-		pdf.CreatePDF(chapterPath, savedFiles, &wg)
+		pdf.CreatePDF(chapterPath, savedFiles)
 	}
-
-	wg.Wait()
 
 	if downData.Del == "1" {
 		err := os.RemoveAll(chapterPath)
 		if err != nil {
-			log.Println("-- Ошибка при удалении файлов:", err)
+			logger.Log.Error("Ошибка при удалении файлов:", err)
 		}
 	}
 
