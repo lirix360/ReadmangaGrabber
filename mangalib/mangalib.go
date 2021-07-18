@@ -17,6 +17,7 @@ import (
 	"github.com/lirix360/ReadmangaGrabber/tools"
 )
 
+// ChaptersRawData - ...
 type ChaptersRawData struct {
 	Chapters struct {
 		List []struct {
@@ -27,11 +28,13 @@ type ChaptersRawData struct {
 	} `json:"chapters"`
 }
 
+// PagesList - ...
 type PagesList []struct {
 	Page int    `json:"p"`
 	URL  string `json:"u"`
 }
 
+// Info - ...
 type Info struct {
 	Img struct {
 		URL    string `json:"url"`

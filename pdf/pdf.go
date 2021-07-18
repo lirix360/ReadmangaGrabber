@@ -9,8 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
-	_ "image/gif"
-	_ "image/png"
+	_ "image/gif" // GIF images
+	_ "image/png" // PNG images
 
 	"github.com/lirix360/ReadmangaGrabber/data"
 	"github.com/lirix360/ReadmangaGrabber/logger"
