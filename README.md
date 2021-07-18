@@ -1,4 +1,4 @@
-# Manga Grabber (v2)
+# Manga Grabber (v2) [![Build status](https://api.travis-ci.com/lirix360/ReadmangaGrabber.svg?branch=master)](https://travis-ci.com/github/lirix360/ReadmangaGrabber) [![Go Report Card](https://img.shields.io/badge/go%20report-A+-brightgreen.svg?style=flat)](https://goreportcard.com/report/github.com/lirix360/readmangagrabber)
 
 Утилита для скачивания манги с сайтов ReadManga, MintManga, SelfManga и MangaLib.
 
