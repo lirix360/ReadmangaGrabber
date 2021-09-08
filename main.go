@@ -12,11 +12,12 @@ import (
 	"github.com/gorilla/mux"
 	"gopkg.in/olahol/melody.v1"
 
+	browser "github.com/pkg/browser"
+
 	"github.com/lirix360/ReadmangaGrabber/config"
 	"github.com/lirix360/ReadmangaGrabber/data"
 	"github.com/lirix360/ReadmangaGrabber/logger"
 	"github.com/lirix360/ReadmangaGrabber/manga"
-	"github.com/lirix360/ReadmangaGrabber/tools"
 )
 
 //go:embed index.html
@@ -74,7 +75,7 @@ func main() {
 		IdleTimeout:  time.Second * 60,
 	}
 
-	err = tools.OpenBrowser("http://127.0.0.1:8888/")
+	err = browser.OpenURL("http://127.0.0.1:8888/")
 	if err != nil {
 		logger.Log.Fatal("Ошибка при открытии браузера:", err)
 	}

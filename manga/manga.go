@@ -27,11 +27,13 @@ func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 
 	switch host {
 	case "mangalib.me":
-		chaptersList, err = mangalib.GetChaptersList(mangaURL)
-		if err != nil {
-			hasError = true
-			logger.Log.Error("Ошибка при получении списка глав:", err)
-		}
+		// chaptersList, err = mangalib.GetChaptersList(mangaURL)
+		// if err != nil {
+		// 	hasError = true
+		// 	logger.Log.Error("Ошибка при получении списка глав:", err)
+		// }
+		hasError = true
+		errText = "Скачивание с MangaLib временно невозможно."
 	case "readmanga.live", "mintmanga.live", "selfmanga.live", "wwv.allhen.live":
 		chaptersList, err = readmanga.GetChaptersList(mangaURL)
 		if err != nil {

@@ -146,13 +146,12 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) e
 
 	resp.Body.Close()
 
-	r := regexp.MustCompile(`rm_h\.init(.+);`)
-	r2 := regexp.MustCompile(`\[.+\]`)
+	r := regexp.MustCompile(`rm_h\.initReader\(\s\[\d,\d\],\s\[(.+)\],\s0,\sfalse.+\);`)
 
-	imagePartsString := strings.Trim(r2.FindString(r.FindString(string(pageBody))), "[]")
+	chList := r.FindStringSubmatch(string(pageBody))
 
-	if imagePartsString != "" {
-		imageParts := strings.Split(imagePartsString, "],[")
+	if len(chList) > 0 && chList[1] != "" {
+		imageParts := strings.Split(strings.Trim(chList[1], "[]"), "],[")
 
 		for i := 0; i < len(imageParts); i++ {
 			tmpParts := strings.Split(imageParts[i], ",")
@@ -172,17 +171,21 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) e
 	for _, imgURL := range imageLinks {
 		client := grab.NewClient()
 		client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0"
+
 		req, err := grab.NewRequest(chapterPath, imgURL)
-		req.HTTPRequest.Header.Set("Referer", refURL.Scheme+"://"+refURL.Host+"/")
 		if err != nil {
 			logger.Log.Error("Ошибка при скачивании страницы:", err)
 			return err
 		}
+
+		req.HTTPRequest.Header.Set("Referer", refURL.Scheme+"://"+refURL.Host+"/")
+
 		resp := client.Do(req)
 		if resp.Err() != nil {
 			logger.Log.Error("Ошибка при скачивании страницы:", resp.Err())
 			return err
 		}
+
 		savedFiles = append(savedFiles, resp.Filename)
 
 		time.Sleep(time.Duration(config.Cfg.Readmanga.TimeoutImage) * time.Microsecond)

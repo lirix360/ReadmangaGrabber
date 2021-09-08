@@ -1,6 +1,6 @@
 language: go
 
-go: 1.16.x
+go: 1.17.x
 
 os:
   - linux

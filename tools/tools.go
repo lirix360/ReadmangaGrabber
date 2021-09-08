@@ -2,12 +2,9 @@ package tools
 
 import (
 	"compress/flate"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/exec"
-	"runtime"
 
 	scraper "github.com/byung82/go-cloudflare-scraper"
 	"github.com/mholt/archiver"
@@ -15,24 +12,6 @@ import (
 	"github.com/lirix360/ReadmangaGrabber/data"
 	"github.com/lirix360/ReadmangaGrabber/logger"
 )
-
-// OpenBrowser - ...
-func OpenBrowser(url string) error {
-	var err error
-
-	switch runtime.GOOS {
-	case "linux":
-		err = exec.Command("xdg-open", url).Start()
-	case "windows":
-		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
-	case "darwin":
-		err = exec.Command("open", url).Start()
-	default:
-		err = fmt.Errorf("unsupported platform")
-	}
-
-	return err
-}
 
 // ReverseList - ...
 func ReverseList(chaptersList []data.ChaptersList) []data.ChaptersList {

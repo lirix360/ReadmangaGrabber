@@ -36,7 +36,7 @@
                 <div class="float-end" data-bs-toggle="modal" data-bs-target="#optionsModal"><i class="bi bi-gear" style="cursor: pointer;" data-bs-toggle="tooltip" data-bs-placement="left" title="Настройки утилиты"></i></div>
             </div>
             <div class="card-body bg-transparent">
-                <p>Manga Grabber - утилита для скачивания манги с ресурсов ReadManga, MintManga, SelfManga и MangaLib.</p>
+                <p>Manga Grabber - утилита для скачивания манги с ресурсов ReadManga, MintManga, SelfManga.</p>
                 <hr />
                 <form>
                     <div id="optionsSection">
@@ -58,7 +58,7 @@
                         <div class="mb-3">
                             <label for="mangaURL" class="form-label">Адрес манги</label>
                             <input type="text" class="form-control opt-data" id="mangaURL" required>
-                            <div id="mangaURLHelp" class="form-text">Адрес страницы со списком глав (например: https://readmanga.live/the_disappearance_of_yuki_nagato или https://mangalib.me/kinjo-no-nanako-san)</div>
+                            <div id="mangaURLHelp" class="form-text">Адрес страницы со списком глав (например: https://readmanga.live/the_disappearance_of_yuki_nagato)</div>
                         </div>
                         <div class="mb-3" style="text-align: center;">
                             <button type="button" class="btn btn-primary opt-data" id="getChaptersListBtn" onclick="getChaptersList();">Получить список глав</button>
@@ -136,7 +136,7 @@
                                 <div id="optRMFilePauseHelp" class="form-text">Секунд. Не рекомендуется менее 0.3 сек.</div>
                             </div>
                         </div>
-                        <hr />
+                        <!-- <hr />
                         <p><b>MangaLib</b></p>
                         <div class="row">
                             <div class="col">
@@ -149,7 +149,7 @@
                                 <input type="text" class="form-control flData" id="optMLFilePause">
                                 <div id="optMLFilePauseHelp" class="form-text">Секунд. Не рекомендуется менее 0.5 сек.</div>
                             </div>
-                        </div>
+                        </div> -->
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -190,8 +190,7 @@
                     } else {
                         $('#log').append(data.payload.text + '<br />')
                     }
-                    //var elem = document.getElementById('log');
-                    $('#log').scrollTop = elem.scrollHeight;
+                    $('#log').scrollTop = $('#log').scrollHeight;
                     break;
                 case 'downloadComplete':
                     $('#downloadSection').hide();
@@ -222,23 +221,23 @@
                 $('#optRMChPause').val(data.readmanga.timeout_chapter / 1000);
                 $('#optRMFilePause').val(data.readmanga.timeout_image / 1000);
 
-                $('#optMLChPause').val(data.mangalib.timeout_chapter / 1000);
-                $('#optMLFilePause').val(data.mangalib.timeout_image / 1000);
+                // $('#optMLChPause').val(data.mangalib.timeout_chapter / 1000);
+                // $('#optMLFilePause').val(data.mangalib.timeout_image / 1000);
             });
         }
 
         function SaveConfig() {
             var optRMChPause = $('#optRMChPause').val();
             var optRMFilePause = $('#optRMFilePause').val();
-            var optMLChPause = $('#optMLChPause').val();
-            var optMLFilePause = $('#optMLFilePause').val();
+            // var optMLChPause = $('#optMLChPause').val();
+            // var optMLFilePause = $('#optMLFilePause').val();
 
             $.get("/saveConfig", {
                 "savepath": $('#optSavePath').val(),
                 "readmanga_timeout_chapter": optRMChPause.replace(',', '.') * 1000,
-                "readmanga_timeout_image": optRMFilePause.replace(',', '.') * 1000,
-                "mangalib_timeout_chapter": optMLChPause.replace(',', '.') * 1000,
-                "mangalib_timeout_image": optMLFilePause.replace(',', '.') * 1000
+                "readmanga_timeout_image": optRMFilePause.replace(',', '.') * 1000
+                // "mangalib_timeout_chapter": optMLChPause.replace(',', '.') * 1000,
+                // "mangalib_timeout_image": optMLFilePause.replace(',', '.') * 1000
             }, function(data) {
                 $('#optionsModal').modal('hide');
             });
