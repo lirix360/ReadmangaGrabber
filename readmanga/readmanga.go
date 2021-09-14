@@ -2,7 +2,6 @@ package readmanga
 
 import (
 	"io/ioutil"
-	"net/http"
 	"os"
 	"regexp"
 	"strings"
@@ -24,7 +23,12 @@ func GetChaptersList(mangaURL string) ([]data.ChaptersList, error) {
 	var err error
 	var chaptersList []data.ChaptersList
 
-	chaptersPage, err := goquery.NewDocument(mangaURL)
+	pageBody, err := tools.GetPage(mangaURL)
+	if err != nil {
+		return chaptersList, err
+	}
+
+	chaptersPage, err := goquery.NewDocumentFromReader(pageBody)
 	if err != nil {
 		return chaptersList, err
 	}
@@ -132,19 +136,17 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) e
 
 	var imageLinks []string
 
-	resp, err := http.Get(chapterURL + "?mtr=1")
+	page, err := tools.GetPage(chapterURL + "?mtr=1")
 	if err != nil {
 		logger.Log.Error("Ошибка при получении страниц:", err)
 		return err
 	}
 
-	pageBody, err := ioutil.ReadAll(resp.Body)
+	pageBody, err := ioutil.ReadAll(page)
 	if err != nil {
 		logger.Log.Error("Ошибка при получении страниц:", err)
 		return err
 	}
-
-	resp.Body.Close()
 
 	r := regexp.MustCompile(`rm_h\.initReader\(\s\[\d,\d\],\s\[(.+)\],\s0,\sfalse.+\);`)
 
@@ -170,7 +172,7 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) e
 
 	for _, imgURL := range imageLinks {
 		client := grab.NewClient()
-		client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0"
+		client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:92.0) Gecko/20100101 Firefox/92.0"
 
 		req, err := grab.NewRequest(chapterPath, imgURL)
 		if err != nil {

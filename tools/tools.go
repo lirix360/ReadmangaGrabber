@@ -2,6 +2,7 @@ package tools
 
 import (
 	"compress/flate"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -22,6 +23,25 @@ func ReverseList(chaptersList []data.ChaptersList) []data.ChaptersList {
 	}
 
 	return newChaptersList
+}
+
+// GetPage - ...
+func GetPage(pageURL string) (io.ReadCloser, error) {
+	client := &http.Client{}
+
+	req, err := http.NewRequest("GET", pageURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:92.0) Gecko/20100101 Firefox/92.0")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Body, nil
 }
 
 // GetPageCF - ...
