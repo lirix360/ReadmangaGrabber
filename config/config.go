@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -28,10 +29,26 @@ type GrabberConfig struct {
 var Cfg GrabberConfig
 
 func init() {
+	if _, err := os.Stat("grabber_config.json"); os.IsNotExist(err) {
+		createConfig("grabber_config.json")
+	}
+
 	err := readConfig("grabber_config.json")
 	if err != nil {
 		logger.Log.Fatal("Ошибка при чтении файла конфигурации:", err)
 	}
+}
+
+func createConfig(filePath string) {
+	newCfg := GrabberConfig{}
+
+	newCfg.Savepath = "Manga/"
+	newCfg.Readmanga.TimeoutImage = 300
+	newCfg.Readmanga.TimeoutChapter = 1000
+	newCfg.Mangalib.TimeoutImage = 500
+	newCfg.Mangalib.TimeoutChapter = 1000
+
+	writeConfig("grabber_config.json", newCfg)
 }
 
 func readConfig(filePath string) error {
@@ -75,8 +92,10 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 	Cfg.Savepath = r.FormValue("savepath")
 	Cfg.Readmanga.TimeoutChapter, _ = strconv.Atoi(r.FormValue("readmanga_timeout_chapter"))
 	Cfg.Readmanga.TimeoutImage, _ = strconv.Atoi(r.FormValue("readmanga_timeout_image"))
-	Cfg.Mangalib.TimeoutChapter, _ = strconv.Atoi(r.FormValue("mangalib_timeout_chapter"))
-	Cfg.Mangalib.TimeoutImage, _ = strconv.Atoi(r.FormValue("mangalib_timeout_image"))
+	// Cfg.Mangalib.TimeoutChapter, _ = strconv.Atoi(r.FormValue("mangalib_timeout_chapter"))
+	// Cfg.Mangalib.TimeoutImage, _ = strconv.Atoi(r.FormValue("mangalib_timeout_image"))
+	Cfg.Mangalib.TimeoutChapter = 1000
+	Cfg.Mangalib.TimeoutImage = 500
 
 	writeConfig("grabber_config.json", Cfg)
 }
