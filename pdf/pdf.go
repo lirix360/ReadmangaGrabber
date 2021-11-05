@@ -12,6 +12,8 @@ import (
 	_ "image/gif" // GIF images
 	_ "image/png" // PNG images
 
+	"golang.org/x/image/webp"
+
 	"github.com/lirix360/ReadmangaGrabber/data"
 	"github.com/lirix360/ReadmangaGrabber/logger"
 
@@ -25,7 +27,7 @@ func CreatePDF(chapterPath string, savedFiles []string) error {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 
 	for _, file := range savedFiles {
-		width, height, err := resizeToFit(file)
+		imageFile, err := convertImg(file)
 		if err != nil {
 			data.WSChan <- data.WSData{
 				Cmd: "updateLog",
@@ -37,7 +39,7 @@ func CreatePDF(chapterPath string, savedFiles []string) error {
 			return err
 		}
 
-		imageFile, err := convertImg(file)
+		width, height, err := resizeToFit(imageFile)
 		if err != nil {
 			data.WSChan <- data.WSData{
 				Cmd: "updateLog",
@@ -101,18 +103,32 @@ func resizeToFit(imgFilename string) (float64, float64, error) {
 }
 
 func convertImg(srcImg string) (string, error) {
+	var imgSrc image.Image
+	var err error
+
 	srcPath := filepath.Dir(srcImg)
 	dstPath := filepath.Join(srcPath, "pdf")
 	srcFile := filepath.Base(srcImg)
 	dstFile := filepath.Join(dstPath, srcFile+".jpg")
 
+	fileExt := filepath.Ext(srcImg)
+
 	imgFile, _ := os.Open(srcImg)
 
-	imgSrc, _, err := image.Decode(imgFile)
-	if err != nil {
-		logger.Log.Error("Ошибка при декодировании файла ("+srcImg+"):", err)
-		imgFile.Close()
-		return "", err
+	if fileExt == ".webp" {
+		imgSrc, err = webp.Decode(imgFile)
+		if err != nil {
+			logger.Log.Error("Ошибка при декодировании файла ("+srcImg+"):", err)
+			imgFile.Close()
+			return "", err
+		}
+	} else {
+		imgSrc, _, err = image.Decode(imgFile)
+		if err != nil {
+			logger.Log.Error("Ошибка при декодировании файла ("+srcImg+"):", err)
+			imgFile.Close()
+			return "", err
+		}
 	}
 
 	if _, err = os.Stat(dstPath); os.IsNotExist(err) {
