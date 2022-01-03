@@ -1,20 +1,19 @@
 package tools
 
 import (
+	"bytes"
 	"compress/flate"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 
-	scraper "github.com/byung82/go-cloudflare-scraper"
+	"github.com/headzoo/surf"
 	"github.com/mholt/archiver"
 
 	"github.com/lirix360/ReadmangaGrabber/data"
 	"github.com/lirix360/ReadmangaGrabber/logger"
 )
 
-// ReverseList - ...
 func ReverseList(chaptersList []data.ChaptersList) []data.ChaptersList {
 	newChaptersList := make([]data.ChaptersList, 0, len(chaptersList))
 
@@ -25,7 +24,6 @@ func ReverseList(chaptersList []data.ChaptersList) []data.ChaptersList {
 	return newChaptersList
 }
 
-// GetPage - ...
 func GetPage(pageURL string) (io.ReadCloser, error) {
 	client := &http.Client{}
 
@@ -44,31 +42,30 @@ func GetPage(pageURL string) (io.ReadCloser, error) {
 	return resp.Body, nil
 }
 
-// GetPageCF - ...
-func GetPageCF(pageURL string) ([]byte, error) {
-	var body []byte
+func GetPageCF(pageURL string) (string, error) {
+	var body bytes.Buffer
+	bow := surf.NewBrowser()
 
-	scraper, err := scraper.NewTransport(http.DefaultTransport)
+	err := bow.Open(pageURL)
 	if err != nil {
-		return body, err
+		return "", err
 	}
 
-	c := http.Client{Transport: scraper}
-	res, err := c.Get(pageURL)
-	if err != nil {
-		return body, err
-	}
-	defer res.Body.Close()
+	bow.Download(&body)
 
-	body, err = ioutil.ReadAll(res.Body)
-	if err != nil {
-		return body, err
-	}
-
-	return body, nil
+	return body.String(), nil
 }
 
-// CreateCBZ - ...
+func SavePage(body string) {
+	file, err := os.Create("saved.html")
+	if err != nil {
+		logger.Log.Error(err)
+	} else {
+		file.WriteString(body)
+	}
+	file.Close()
+}
+
 func CreateCBZ(chapterPath string) error {
 	z := archiver.Zip{
 		CompressionLevel:       flate.NoCompression,
@@ -109,7 +106,6 @@ func CreateCBZ(chapterPath string) error {
 	return nil
 }
 
-// GetPercent - ...
 func GetPercent(cur, total int) int {
 	var percent int
 

@@ -3,6 +3,7 @@ package readmanga
 import (
 	"io/ioutil"
 	"os"
+	"path"
 	"regexp"
 	"strings"
 	"time"
@@ -18,7 +19,6 @@ import (
 	"github.com/lirix360/ReadmangaGrabber/tools"
 )
 
-// GetChaptersList - ...
 func GetChaptersList(mangaURL string) ([]data.ChaptersList, error) {
 	var err error
 	var chaptersList []data.ChaptersList
@@ -48,7 +48,6 @@ func GetChaptersList(mangaURL string) ([]data.ChaptersList, error) {
 	return tools.ReverseList(chaptersList), nil
 }
 
-// DownloadManga - ...
 func DownloadManga(downData data.DownloadOpts) error {
 	var err error
 	var chaptersList []data.ChaptersList
@@ -118,7 +117,6 @@ func DownloadManga(downData data.DownloadOpts) error {
 	return nil
 }
 
-// DownloadChapter - ...
 func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) error {
 	var err error
 
@@ -162,7 +160,7 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) e
 		}
 	}
 
-	chapterPath := "Manga/" + downData.SavePath + "/" + curChapter.Path
+	chapterPath := path.Join(config.Cfg.Savepath, downData.SavePath, curChapter.Path)
 
 	if _, err := os.Stat(chapterPath); os.IsNotExist(err) {
 		os.MkdirAll(chapterPath, 0755)

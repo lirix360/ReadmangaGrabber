@@ -13,27 +13,26 @@ import (
 	"github.com/lirix360/ReadmangaGrabber/readmanga"
 )
 
-// GetChaptersList - ...
 func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var hasError bool
 	var errText = "При получении списка глав произошла ошибка. Подробности в лог-файле."
 	var chaptersList []data.ChaptersList
 
-	mangaURL := r.FormValue("mangaURL")
-
-	url, _ := urlx.Parse(mangaURL)
+	url, _ := urlx.Parse(r.FormValue("mangaURL"))
 	host, _, _ := urlx.SplitHostPort(url)
+
+	mangaURL := strings.Split(url.String(), "?")[0]
 
 	switch host {
 	case "mangalib.me":
-		// chaptersList, err = mangalib.GetChaptersList(mangaURL)
-		// if err != nil {
-		// 	hasError = true
-		// 	logger.Log.Error("Ошибка при получении списка глав:", err)
-		// }
-		hasError = true
-		errText = "Скачивание с MangaLib временно невозможно."
+		chaptersList, err = mangalib.GetChaptersList(mangaURL)
+		if err != nil {
+			hasError = true
+			logger.Log.Error("Ошибка при получении списка глав:", err)
+		}
+		// hasError = true
+		// errText = "Скачивание с MangaLib временно невозможно."
 	case "readmanga.io", "mintmanga.live", "selfmanga.live", "23.allhen.online":
 		chaptersList, err = readmanga.GetChaptersList(mangaURL)
 		if err != nil {
@@ -66,20 +65,19 @@ func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 	w.Write(respData)
 }
 
-// DownloadManga - ...
 func DownloadManga(w http.ResponseWriter, r *http.Request) {
 	downloadOpts := data.DownloadOpts{
 		Type:     r.FormValue("downloadType"),
-		MangaURL: r.FormValue("mangaURL"),
 		Chapters: r.FormValue("selectedChapters"),
 		PDF:      r.FormValue("optPDF"),
 		CBZ:      r.FormValue("optCBZ"),
 		Del:      r.FormValue("optDEL"),
 	}
 
-	url, _ := urlx.Parse(downloadOpts.MangaURL)
+	url, _ := urlx.Parse(r.FormValue("mangaURL"))
 	host, _, _ := urlx.SplitHostPort(url)
 
+	downloadOpts.MangaURL = strings.Split(url.String(), "?")[0]
 	downloadOpts.SavePath = strings.Trim(url.Path, "/")
 
 	switch host {

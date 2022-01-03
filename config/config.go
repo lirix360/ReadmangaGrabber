@@ -12,7 +12,6 @@ import (
 	"github.com/lirix360/ReadmangaGrabber/logger"
 )
 
-// GrabberConfig - ...
 type GrabberConfig struct {
 	Savepath  string `json:"savepath"`
 	Readmanga struct {
@@ -25,7 +24,6 @@ type GrabberConfig struct {
 	} `json:"mangalib"`
 }
 
-// Cfg - ...
 var Cfg GrabberConfig
 
 func init() {
@@ -79,7 +77,6 @@ func writeConfig(filePath string, config GrabberConfig) error {
 	return nil
 }
 
-// LoadConfig - ...
 func LoadConfig(w http.ResponseWriter, r *http.Request) {
 	cfgJSON, _ := json.Marshal(Cfg)
 
@@ -87,13 +84,12 @@ func LoadConfig(w http.ResponseWriter, r *http.Request) {
 	w.Write(cfgJSON)
 }
 
-// SaveConfig - ...
 func SaveConfig(w http.ResponseWriter, r *http.Request) {
 	Cfg.Savepath = r.FormValue("savepath")
 	Cfg.Readmanga.TimeoutChapter, _ = strconv.Atoi(r.FormValue("readmanga_timeout_chapter"))
 	Cfg.Readmanga.TimeoutImage, _ = strconv.Atoi(r.FormValue("readmanga_timeout_image"))
-	// Cfg.Mangalib.TimeoutChapter, _ = strconv.Atoi(r.FormValue("mangalib_timeout_chapter"))
-	// Cfg.Mangalib.TimeoutImage, _ = strconv.Atoi(r.FormValue("mangalib_timeout_image"))
+	Cfg.Mangalib.TimeoutChapter, _ = strconv.Atoi(r.FormValue("mangalib_timeout_chapter"))
+	Cfg.Mangalib.TimeoutImage, _ = strconv.Atoi(r.FormValue("mangalib_timeout_image"))
 	Cfg.Mangalib.TimeoutChapter = 1000
 	Cfg.Mangalib.TimeoutImage = 500
 

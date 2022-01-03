@@ -20,7 +20,6 @@ import (
 	"github.com/phpdave11/gofpdf"
 )
 
-// CreatePDF - ...
 func CreatePDF(chapterPath string, savedFiles []string) error {
 	var opt gofpdf.ImageOptions
 

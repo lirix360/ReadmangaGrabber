@@ -3,6 +3,7 @@ package mangalib
 import (
 	"encoding/json"
 	"os"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -17,7 +18,6 @@ import (
 	"github.com/lirix360/ReadmangaGrabber/tools"
 )
 
-// ChaptersRawData - ...
 type ChaptersRawData struct {
 	Chapters struct {
 		List []struct {
@@ -28,13 +28,11 @@ type ChaptersRawData struct {
 	} `json:"chapters"`
 }
 
-// PagesList - ...
 type PagesList []struct {
 	Page int    `json:"p"`
 	URL  string `json:"u"`
 }
 
-// Info - ...
 type Info struct {
 	Img struct {
 		URL    string `json:"url"`
@@ -48,7 +46,6 @@ type Info struct {
 	} `json:"servers"`
 }
 
-// GetChaptersList - ...
 func GetChaptersList(mangaURL string) ([]data.ChaptersList, error) {
 	var err error
 	var chaptersList []data.ChaptersList
@@ -59,7 +56,7 @@ func GetChaptersList(mangaURL string) ([]data.ChaptersList, error) {
 		return chaptersList, err
 	}
 
-	rawData := strings.Trim(dataRE.FindString(string(body)), "window.__DATA__ = ;")
+	rawData := strings.Trim(dataRE.FindString(body), "window.__DATA__ = ;")
 
 	chaptersRawData := ChaptersRawData{}
 	err = json.Unmarshal([]byte(rawData), &chaptersRawData)
@@ -79,7 +76,6 @@ func GetChaptersList(mangaURL string) ([]data.ChaptersList, error) {
 	return tools.ReverseList(chaptersList), nil
 }
 
-// DownloadManga - ...
 func DownloadManga(downData data.DownloadOpts) error {
 	var err error
 	var chaptersList []data.ChaptersList
@@ -149,7 +145,6 @@ func DownloadManga(downData data.DownloadOpts) error {
 	return nil
 }
 
-// DownloadChapter - ...
 func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) error {
 	var err error
 
@@ -171,8 +166,8 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) e
 		return err
 	}
 
-	rawInfo := strings.Trim(infoRE.FindString(string(body)), "window.__info = ;")
-	rawPages := strings.Trim(pagesRE.FindString(string(body)), "window.__pg = ;")
+	rawInfo := strings.Trim(infoRE.FindString(body), "window.__info = ;")
+	rawPages := strings.Trim(pagesRE.FindString(body), "window.__pg = ;")
 
 	info := Info{}
 	pages := PagesList{}
@@ -189,7 +184,7 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) e
 		return err
 	}
 
-	chapterPath := "Manga/" + downData.SavePath + "/" + curChapter.Path
+	chapterPath := path.Join(config.Cfg.Savepath, downData.SavePath, curChapter.Path)
 
 	if _, err := os.Stat(chapterPath); os.IsNotExist(err) {
 		os.MkdirAll(chapterPath, 0755)
@@ -216,7 +211,7 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) e
 		client := grab.NewClient()
 		client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0"
 		req, err := grab.NewRequest(chapterPath, imgURL)
-		// req.HTTPRequest.Header.Set("Referer", chapterURL)
+		req.HTTPRequest.Header.Set("Referer", chapterURL)
 		if err != nil {
 			logger.Log.Error("Ошибка при скачивании страницы:", err)
 			return err
