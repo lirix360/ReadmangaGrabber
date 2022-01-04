@@ -1,6 +1,3 @@
 .DS_Store
 
 builds/*
-cf/*
-
-go.sum
