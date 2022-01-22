@@ -1,5 +1,3 @@
-@echo off
-
 set GOOS=darwin
 set GOARCH=amd64
 
