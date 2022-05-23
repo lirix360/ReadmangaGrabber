@@ -7,7 +7,6 @@ import (
 	"github.com/kpango/glg"
 )
 
-// Log - ...
 var Log *glg.Glg
 
 func init() {

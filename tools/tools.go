@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/flate"
 	"io"
+	"math"
 	"net/http"
 	"os"
 
@@ -112,7 +113,7 @@ func GetPercent(cur, total int) int {
 	if cur == total {
 		percent = 100
 	} else {
-		percent = (100 / total) * cur
+		percent = int(math.Round((100 / float64(total)) * float64(cur)))
 	}
 
 	return percent

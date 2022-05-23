@@ -18,6 +18,7 @@ func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 	var hasError bool
 	var errText = "При получении списка глав произошла ошибка. Подробности в лог-файле."
 	var chaptersList []data.ChaptersList
+	var transList []data.RMTranslators
 
 	url, _ := urlx.Parse(r.FormValue("mangaURL"))
 	host, _, _ := urlx.SplitHostPort(url)
@@ -31,10 +32,8 @@ func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 			hasError = true
 			logger.Log.Error("Ошибка при получении списка глав:", err)
 		}
-		// hasError = true
-		// errText = "Скачивание с MangaLib временно невозможно."
 	case "readmanga.io", "mintmanga.live", "selfmanga.live", "23.allhen.online":
-		chaptersList, err = readmanga.GetChaptersList(mangaURL)
+		chaptersList, transList, err = readmanga.GetChaptersList(mangaURL)
 		if err != nil {
 			hasError = true
 			logger.Log.Error("Ошибка при получении списка глав:", err)
@@ -53,6 +52,7 @@ func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 		if len(chaptersList) > 0 {
 			resp["status"] = "success"
 			resp["payload"] = chaptersList
+			resp["translators"] = transList
 		} else {
 			resp["status"] = "error"
 			resp["payload"] = "Глав не найдено. Проверьте правильность ввода адреса манги."
@@ -67,11 +67,12 @@ func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 
 func DownloadManga(w http.ResponseWriter, r *http.Request) {
 	downloadOpts := data.DownloadOpts{
-		Type:     r.FormValue("downloadType"),
-		Chapters: r.FormValue("selectedChapters"),
-		PDF:      r.FormValue("optPDF"),
-		CBZ:      r.FormValue("optCBZ"),
-		Del:      r.FormValue("optDEL"),
+		Type:      r.FormValue("downloadType"),
+		Chapters:  r.FormValue("selectedChapters"),
+		PDF:       r.FormValue("optPDF"),
+		CBZ:       r.FormValue("optCBZ"),
+		Del:       r.FormValue("optDEL"),
+		PrefTrans: r.FormValue("optPrefTrans"),
 	}
 
 	url, _ := urlx.Parse(r.FormValue("mangaURL"))

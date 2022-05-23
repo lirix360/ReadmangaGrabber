@@ -1,14 +1,14 @@
-@echo off
+#!/bin/bash
 
-set GOOS=darwin
-set GOARCH=amd64
+export GOOS=darwin
+export GOARCH=amd64
 
 go build -ldflags="-s -w" -o builds/osx/grabber_osx_x64 main.go
 
-set GOOS=darwin
-set GOARCH=arm64
+export GOOS=darwin
+export GOARCH=arm64
 
 go build -ldflags="-s -w" -o builds/osx/grabber_osx_arm64 main.go
 
-set GOOS=
-set GOARCH=
+export GOOS=
+export GOARCH=

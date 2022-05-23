@@ -21,6 +21,7 @@ import (
 )
 
 //go:embed index.html
+//go:embed assets/*
 var webUI embed.FS
 
 func main() {

@@ -1,32 +1,33 @@
 package data
 
-// ChaptersList - ...
 type ChaptersList struct {
 	Title string `json:"title"`
 	Path  string `json:"path"`
 }
 
-// WSData - ...
+type RMTranslators struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 type WSData struct {
 	Cmd     string      `json:"cmd"`
 	Payload interface{} `json:"payload"`
 }
 
-// DownloadOpts - ...
 type DownloadOpts struct {
-	Type     string
-	Chapters string
-	MangaURL string
-	PDF      string
-	CBZ      string
-	Del      string
-	SavePath string
+	Type      string
+	Chapters  string
+	MangaURL  string
+	PDF       string
+	CBZ       string
+	Del       string
+	SavePath  string
+	PrefTrans string
 }
 
-// WSChan - ...
 var WSChan = make(chan WSData, 10)
 
-// PDF - ...
 type PDF struct {
 	DPI       float64
 	MmInInch  float64
@@ -36,7 +37,6 @@ type PDF struct {
 	MaxWidth  float64
 }
 
-// PDFOpts - ...
 var PDFOpts PDF
 
 func init() {

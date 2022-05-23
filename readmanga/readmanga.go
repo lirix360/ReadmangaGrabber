@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/cavaliercoder/grab"
+	"github.com/cavaliergopher/grab/v3"
 	"github.com/goware/urlx"
 
 	"github.com/lirix360/ReadmangaGrabber/config"
@@ -19,18 +19,19 @@ import (
 	"github.com/lirix360/ReadmangaGrabber/tools"
 )
 
-func GetChaptersList(mangaURL string) ([]data.ChaptersList, error) {
+func GetChaptersList(mangaURL string) ([]data.ChaptersList, []data.RMTranslators, error) {
 	var err error
 	var chaptersList []data.ChaptersList
+	var transList []data.RMTranslators
 
 	pageBody, err := tools.GetPage(mangaURL)
 	if err != nil {
-		return chaptersList, err
+		return chaptersList, transList, err
 	}
 
 	chaptersPage, err := goquery.NewDocumentFromReader(pageBody)
 	if err != nil {
-		return chaptersList, err
+		return chaptersList, transList, err
 	}
 
 	chaptersPage.Find(".chapters-link a").Each(func(i int, s *goquery.Selection) {
@@ -45,7 +46,21 @@ func GetChaptersList(mangaURL string) ([]data.ChaptersList, error) {
 		chaptersList = append(chaptersList, chapter)
 	})
 
-	return tools.ReverseList(chaptersList), nil
+	chaptersPage.Find("#translation > option").Each(func(i int, s *goquery.Selection) {
+		trID, _ := s.Attr("value")
+		trName := s.Text()
+
+		trans := data.RMTranslators{
+			ID:   trID,
+			Name: trName,
+		}
+
+		transList = append(transList, trans)
+	})
+
+	logger.Log.Info(transList)
+
+	return tools.ReverseList(chaptersList), transList, nil
 }
 
 func DownloadManga(downData data.DownloadOpts) error {
@@ -54,7 +69,7 @@ func DownloadManga(downData data.DownloadOpts) error {
 
 	switch downData.Type {
 	case "all":
-		chaptersList, err = GetChaptersList(downData.MangaURL)
+		chaptersList, _, err = GetChaptersList(downData.MangaURL)
 		if err != nil {
 			logger.Log.Error("Ошибка при получении списка глав:", err)
 			return err
@@ -134,7 +149,13 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) e
 
 	var imageLinks []string
 
-	page, err := tools.GetPage(chapterURL + "?mtr=1")
+	ptOpt := ""
+
+	if downData.PrefTrans != "" {
+		ptOpt = "&tran=" + downData.PrefTrans
+	}
+
+	page, err := tools.GetPage(chapterURL + "?mtr=1" + ptOpt)
 	if err != nil {
 		logger.Log.Error("Ошибка при получении страниц:", err)
 		return err
