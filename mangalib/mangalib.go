@@ -2,6 +2,7 @@ package mangalib
 
 import (
 	"encoding/json"
+	"io"
 	"os"
 	"path"
 	"regexp"
@@ -9,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/cavaliergopher/grab/v3"
 
 	"github.com/lirix360/ReadmangaGrabber/config"
@@ -46,6 +48,32 @@ type Info struct {
 	} `json:"servers"`
 }
 
+func GetMangaInfo(mangaURL string) (data.MangaInfo, error) {
+	var err error
+	var mangaInfo data.MangaInfo
+
+	body, err := tools.GetPageCF(mangaURL)
+	if err != nil {
+		return mangaInfo, err
+	}
+
+	chaptersPage, err := goquery.NewDocumentFromReader(body)
+	if err != nil {
+		return mangaInfo, err
+	}
+
+	origTitle := chaptersPage.Find(".media-name__alt").Text()
+
+	if origTitle == "" {
+		origTitle = chaptersPage.Find(".media-name__main").Text()
+	}
+
+	mangaInfo.TitleOrig = origTitle
+	mangaInfo.TitleRu = chaptersPage.Find(".media-name__main").Text()
+
+	return mangaInfo, nil
+}
+
 func GetChaptersList(mangaURL string) ([]data.ChaptersList, error) {
 	var err error
 	var chaptersList []data.ChaptersList
@@ -56,7 +84,13 @@ func GetChaptersList(mangaURL string) ([]data.ChaptersList, error) {
 		return chaptersList, err
 	}
 
-	rawData := strings.Trim(dataRE.FindString(body), "window.__DATA__ = ;")
+	buf := new(strings.Builder)
+	_, err = io.Copy(buf, body)
+	if err != nil {
+		return chaptersList, err
+	}
+
+	rawData := strings.Trim(dataRE.FindString(buf.String()), "window.__DATA__ = ;")
 
 	chaptersRawData := ChaptersRawData{}
 	err = json.Unmarshal([]byte(rawData), &chaptersRawData)
@@ -166,8 +200,14 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) e
 		return err
 	}
 
-	rawInfo := strings.Trim(infoRE.FindString(body), "window.__info = ;")
-	rawPages := strings.Trim(pagesRE.FindString(body), "window.__pg = ;")
+	buf := new(strings.Builder)
+	_, err = io.Copy(buf, body)
+	if err != nil {
+		return err
+	}
+
+	rawInfo := strings.Trim(infoRE.FindString(buf.String()), "window.__info = ;")
+	rawPages := strings.Trim(pagesRE.FindString(buf.String()), "window.__pg = ;")
 
 	info := Info{}
 	pages := PagesList{}

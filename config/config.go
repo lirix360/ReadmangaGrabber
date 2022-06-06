@@ -26,6 +26,9 @@ type GrabberConfig struct {
 
 var Cfg GrabberConfig
 
+var DBver = "20220605"
+var APPver = ""
+
 func init() {
 	if _, err := os.Stat("grabber_config.json"); os.IsNotExist(err) {
 		createConfig("grabber_config.json")

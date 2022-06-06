@@ -16,8 +16,11 @@ import (
 
 	"github.com/lirix360/ReadmangaGrabber/config"
 	"github.com/lirix360/ReadmangaGrabber/data"
+	"github.com/lirix360/ReadmangaGrabber/db"
+	"github.com/lirix360/ReadmangaGrabber/favs"
 	"github.com/lirix360/ReadmangaGrabber/logger"
 	"github.com/lirix360/ReadmangaGrabber/manga"
+	"github.com/lirix360/ReadmangaGrabber/tools"
 )
 
 //go:embed index.html
@@ -32,13 +35,21 @@ func main() {
 	r := mux.NewRouter()
 	m := melody.New()
 
+	r.HandleFunc("/getAppVer", tools.GetAppVer)
+
 	r.HandleFunc("/saveConfig", config.SaveConfig)
 	r.HandleFunc("/loadConfig", config.LoadConfig)
+
+	r.HandleFunc("/favsLoad", favs.LoadFavs)
+	r.HandleFunc("/favsGet", favs.GetFav)
+	r.HandleFunc("/favsSave", favs.SaveFav)
+	r.HandleFunc("/favsDelete", favs.DeleteFav)
 
 	r.HandleFunc("/getChaptersList", manga.GetChaptersList)
 	r.HandleFunc("/downloadManga", manga.DownloadManga)
 
 	r.HandleFunc("/closeApp", func(w http.ResponseWriter, r *http.Request) {
+		db.DBconn.Close()
 		logger.Log.Info("Закрытие приложения...")
 		os.Exit(0)
 	})
@@ -86,6 +97,7 @@ func main() {
 	go func() {
 		<-signalChan
 		data.WSChan <- data.WSData{Cmd: "closeApp"}
+		db.DBconn.Close()
 		logger.Log.Info("Закрытие приложения...")
 		os.Exit(0)
 	}()

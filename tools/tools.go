@@ -3,17 +3,53 @@ package tools
 import (
 	"bytes"
 	"compress/flate"
+	"crypto/md5"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
 	"io"
 	"math"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/headzoo/surf"
 	"github.com/mholt/archiver"
 
+	"github.com/lirix360/ReadmangaGrabber/config"
 	"github.com/lirix360/ReadmangaGrabber/data"
 	"github.com/lirix360/ReadmangaGrabber/logger"
 )
+
+func GetAppVer(w http.ResponseWriter, r *http.Request) {
+	resp := make(map[string]interface{})
+
+	resp["status"] = "success"
+	resp["appver"] = config.APPver
+
+	respData, _ := json.Marshal(resp)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(respData)
+}
+
+func GetMD5(text string) string {
+	hasher := md5.New()
+	hasher.Write([]byte(text))
+	return hex.EncodeToString(hasher.Sum(nil))
+}
+
+func SendError(errText string, w http.ResponseWriter) {
+	resp := make(map[string]interface{})
+
+	resp["status"] = "error"
+	resp["errtext"] = errText
+
+	respData, _ := json.Marshal(resp)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(respData)
+}
 
 func ReverseList(chaptersList []data.ChaptersList) []data.ChaptersList {
 	newChaptersList := make([]data.ChaptersList, 0, len(chaptersList))
@@ -43,18 +79,18 @@ func GetPage(pageURL string) (io.ReadCloser, error) {
 	return resp.Body, nil
 }
 
-func GetPageCF(pageURL string) (string, error) {
+func GetPageCF(pageURL string) (io.ReadCloser, error) {
 	var body bytes.Buffer
 	bow := surf.NewBrowser()
 
 	err := bow.Open(pageURL)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	bow.Download(&body)
 
-	return body.String(), nil
+	return io.NopCloser(strings.NewReader(body.String())), nil
 }
 
 func SavePage(body string) {
@@ -117,4 +153,12 @@ func GetPercent(cur, total int) int {
 	}
 
 	return percent
+}
+
+func IsFileExist(filePath string) bool {
+	if _, err := os.Stat(filePath); errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+
+	return true
 }

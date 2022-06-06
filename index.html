@@ -24,6 +24,27 @@
             font-family: 'Roboto Mono', monospace;
             font-size: 0.8rem;
         }
+
+        #topAlert {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            border-radius: 5px;
+            padding: 10px;
+            color: white;
+            max-width: 500px;
+            z-index: 5000;
+        }
+
+        .topAlertS {
+            background-color: rgba(50, 136, 96, .7);
+            border: 1px #338860 solid;
+        }
+
+        .topAlertE {
+            background-color: rgba(229, 57, 57, .7);
+            border: 1px #e53939 solid;
+        }
     </style>
 </head>
 <body>
@@ -31,9 +52,13 @@
         <div class="card border-secondary">
             <div class="card-header text-white bg-secondary">
                 Manga Grabber
-                <div class="float-end" data-bs-toggle="modal" data-bs-target="#optionsModal"><i class="bi bi-gear" style="cursor: pointer;" data-bs-toggle="tooltip" data-bs-placement="left" title="Настройки утилиты"></i></div>
+                <div class="float-end" data-bs-toggle="modal" data-bs-target="#optionsModal"><i class="bi bi-gear" style="cursor: pointer;" data-bs-toggle="tooltip" data-bs-placement="left" title="Настройки программы"></i></div>
             </div>
             <div class="card-body bg-transparent">
+                <div class="alert alert-info alert-dismissible fade show" role="alert" id="updateAlert" style="display: none;">
+                    Вышла новая версия приложения. Скачать можно тут: <a href="https://github.com/lirix360/ReadmangaGrabber/releases/latest" target="_blank">https://github.com/lirix360/ReadmangaGrabber/releases/latest</a>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
                 <p>Manga Grabber - утилита для скачивания манги с ресурсов ReadManga, MintManga, SelfManga.</p>
                 <hr />
                 <form>
@@ -54,8 +79,11 @@
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label for="mangaURL" class="form-label">Адрес манги</label>
-                            <input type="text" class="form-control opt-data" id="mangaURL" required>
+                            <label for="mangaURL" class="form-label">Адрес манги <span style="margin-left: 10px;" data-bs-toggle="modal" data-bs-target="#favsModal"><i class="bi bi-bookmark-star" style="cursor: pointer;" data-bs-toggle="tooltip" data-bs-placement="right" title="Список избранной манги"></i></span></label>
+                            <div class="input-group mb-3" style="margin-bottom: 5px !important;">
+                                <input type="text" class="form-control opt-data" id="mangaURL" required>
+                                <span class="input-group-text"><i class="bi bi-star" style="cursor: pointer;" data-bs-toggle="tooltip" data-bs-placement="left" title="Добавить в избранное" onclick="SaveFav();"></i></span>
+                            </div>
                             <div id="mangaURLHelp" class="form-text">Адрес страницы со списком глав (например: https://readmanga.live/the_disappearance_of_yuki_nagato)</div>
                         </div>
                         <div class="mb-3" style="text-align: center;">
@@ -83,9 +111,9 @@
                         <div class="mb-3">
                             <div id="prefTrans" style="display: none; margin-bottom: 25px;">
                                 Предпочитаемый перевод: 
-                                <select id="transList"></select>
+                                <select class="form-select" id="transList"></select>
                             </div>
-                            <label for="formFile" class="form-label">Скачать главы:</label>
+                            <!-- <label for="formFile" class="form-label">Скачать главы:</label> -->
                             <div class="row row-cols-4" id="chaptersList"></div>
                         </div>
                         <div class="mb-3" style="text-align: center;">
@@ -114,14 +142,14 @@
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h6 class="modal-title" id="exampleModalLabel" style="font-weight: bold;">Настройки утилиты</h6>
+                    <h6 class="modal-title" style="font-weight: bold;">Настройки утилиты</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="optionsForm">
                         <div class="mb-3">
                             <label for="optSavePath" class="form-label">Папка для скачивания манги</label>
-                            <input type="text" class="form-control opt-data" id="optSavePath" required>
+                            <input type="text" class="form-control" id="optSavePath" required>
                             <div id="optSavePathHelp" class="form-text">Путь к папке для скачивания манги (например: Manga/ или D:/Downloads/MyManga/)</div>
                         </div>
                         <hr />
@@ -162,13 +190,29 @@
         </div>
     </div>
 
+    <div class="modal" tabindex="-1" id="favsModal" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title" style="font-weight: bold;">Избранное</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div style="max-height: 70vh !important; overflow: auto !important;">
+                        <table class="table table-hover"><tbody id="favsTable"></tbody></table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="topAlert" style="display: none;"></div>
+
     <script>
         var ws = new WebSocket("ws://127.0.0.1:8888/ws");
 
         ws.onmessage = function(msg) {
             var data = JSON.parse(msg.data);
-
-            console.log(data);
 
             switch (data.cmd) {
                 case 'closeApp':
@@ -192,14 +236,48 @@
                     } else {
                         $('#log').append(data.payload.text + '<br />')
                     }
-                    $('#log').scrollTop = $('#log').scrollHeight;
+                    $("#log").scrollTop($("#log")[0].scrollHeight);
                     break;
                 case 'downloadComplete':
                     $('#downloadSection').hide();
                     $('#successData').html(data.payload.text);
                     $('#successSection').show();
+                    $('.opt-data').attr('disabled', false);
                     break;
             }
+        }
+
+        function CheckUpdate() {
+            $.get("/getAppVer", function(data) {
+                if (data.status == "success") {
+                    $.get("https://manga.liri.me/checkupdate?appver=" + data.appver, function(datar) {
+                    if (datar.status == "success") {
+                        if (datar.hasnewver) {
+                            $('#updateAlert').show('active').delay(60000).hide('active');
+                        }
+                    } else {
+                        console.log(datar.errtext);
+                    }
+            });
+                }
+            });
+        }
+
+        CheckUpdate();
+
+        function ShowTopAlert(text, type) {
+            $('#topAlert').removeClass('topAlertE');
+            $('#topAlert').removeClass('topAlertS');
+
+            $('#topAlert').html(text);
+
+            if (type == "s") {
+                $('#topAlert').addClass('topAlertS');
+            } else {
+                $('#topAlert').addClass('topAlertE');
+            }
+
+            $('#topAlert').show('active').delay(10000).hide('active');
         }
 
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
@@ -211,6 +289,67 @@
             $.get("/closeApp");
             return null;
         });
+
+        $('#favsModal').on('shown.bs.modal', function () {
+            LoadFavs();
+        })
+
+        function LoadFavs() {
+            $('#favsTable').html("");
+
+            $.get("/favsLoad", function(data) {
+                if (data.status == "success") {
+                    $.each(data.favs, function(i, item) {
+                        var td = "<tr><td style=\"cursor: pointer;\" onclick=\"SelectFav(\'" + i + "\');\">" + item + "</td><td style=\"width: 50px;\"><i class=\"bi bi-trash\" style=\"color: red; cursor: pointer;\"></i></td></tr>";
+                        $('#favsTable').append(td);
+                    });
+                } else {
+                    ShowTopAlert("При получении избранного произошла ошибка: " + data.errtext, "e");
+                }
+            });
+        }
+
+        function SaveFav() {
+            $.post("/favsSave", {
+                mangaURL: $('#mangaURL').val()
+            }, function(data) {
+                if (data.status == "success") {
+                    ShowTopAlert("Манга успешно добалена в избранное!", "s");
+                } else {
+                    ShowTopAlert("При добавлении в избранное произошла ошибка: " + data.errtext, "e");
+                }
+            });
+        }
+
+        function DeleteFav() {
+            $.post("/favsDelete", {
+                mangaURL: $('#mangaURL').val()
+            }, function(data) {
+                if (data.status == "success") {
+                    ShowTopAlert("Манга успешно удалена из избранного!", "s");
+                    LoadFavs();
+                } else {
+                    ShowTopAlert("При удалении из избранного произошла ошибка: " + data.errtext, "e");
+                }
+            });
+        }
+
+        function SelectFav(favID) {
+            var favsModal = bootstrap.Modal.getInstance(document.getElementById('favsModal'));
+
+            $.post("/favsGet", {
+                favID: favID
+            }, function(data) {
+                if (data.status == "success") {
+                    $('#mangaURL').val(data.fav.url);
+                    getChaptersList();
+                } else {
+                    ShowTopAlert("При получении данных произошла ошибка: " + data.errtext, "e");
+                }
+            });
+
+            favsModal.hide();
+        }
 
         $('#optionsModal').on('shown.bs.modal', function () {
             LoadConfig();
@@ -253,8 +392,24 @@
             }
         }
 
+        function checkItem(chB) {
+            if ($('#' + chB).prop('checked')) {
+                $('#' + chB).prop('checked', false);
+            } else {
+                $('#' + chB).prop('checked', true);
+            }
+        }
+
+        function checkVolCh(volNum) {
+            if ($('#tom_' + volNum).prop('checked')) {
+                $('.ch-tom-' + volNum).prop('checked', true);
+            } else {
+                $('.ch-tom-' + volNum).prop('checked', false);
+            }
+        }
+
         function getChaptersList() {
-            $('.opt-data').prop('disabled', true);
+            $('.opt-data').attr('disabled', true);
             $('#downloadSection').hide();
             $('#successSection').hide();
             $('#chaptersSection').hide();
@@ -267,10 +422,20 @@
             $.get("/getChaptersList", { "mangaURL": $('#mangaURL').val() }, function(data) {
                 switch (data.status) {
                     case 'success':
-                        $.each(data.payload, function(i, item) {
-                            var html = "<div class='col'><div class='form-check'><input class='form-check-input single-chapter' type='checkbox' id='"+item.path+"' value='"+item.path+"'><label class='form-check-label' for='"+item.path+"'>"+item.title+"</label></div></div>";
+                        var x = 1;
 
-                            $('#chaptersList').append(html);
+                        $.each(data.payload, function(k, item) {
+                            var volHtml = "<div class=\"w-100\" style=\"margin-bottom: 15px !important;\"><div class=\"form-check form-switch\"><input class=\"form-check-input\" type=\"checkbox\" id=\"tom_" + k + "\" onchange=\"checkVolCh('" + k + "');\"><label class=\"form-check-label\" for=\"tom_" + k + "\"><b>Том " + k + "</b></label></div></div>";
+
+                            $('#chaptersList').append(volHtml);
+
+                            $.each(item, function(i, ch) {
+                                var html = "<div class='col' style='margin-bottom: 15px;'><div style='border: 1px solid rgba(0, 0, 0, .125); border-radius: .25rem; margin: 0; width: 100%; height: 100%; padding: 5px 10px; cursor: pointer;' onclick='checkItem(\"chb_"+x+"\");'><div class='form-check form-switch'><input class='form-check-input single-chapter ch-tom-" + k + "' id='chb_"+x+"' type='checkbox' value='"+ch.path+"'><label class='form-check-label' style='cursor: pointer;' for='"+ch.path+"'>"+ch.title+"</label></div></div>";
+
+                                $('#chaptersList').append(html);
+
+                                x++;
+                            });
                         });
 
                         if (data.translators && Object.keys(data.translators).length > 0) {
@@ -286,20 +451,23 @@
 
                         $('#waitSection').hide();
                         $('#chaptersSection').show();
+
+                        $('.opt-data').attr('disabled', false);
+                        checkDeleteOption();
                         break;
                     case 'error':
-                        $('#errorData').html(data.payload);
+                        $('#errorData').html(data.errtext);
                         $('#waitSection').hide();
                         $('#errorSection').show();
+                        $('.opt-data').attr('disabled', false);
+                        checkDeleteOption();
                         break;
                 }
             });
-
-            $('.opt-data').prop('disabled', false);
-            checkDeleteOption();
         }
 
         function downloadManga(type) {
+            $('.opt-data').attr('disabled', true);
             $('#downloadSection').hide();
             $('#successSection').hide();
             $('#chaptersSection').hide();

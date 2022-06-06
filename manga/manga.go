@@ -11,13 +11,13 @@ import (
 	"github.com/lirix360/ReadmangaGrabber/logger"
 	"github.com/lirix360/ReadmangaGrabber/mangalib"
 	"github.com/lirix360/ReadmangaGrabber/readmanga"
+	"github.com/lirix360/ReadmangaGrabber/tools"
 )
 
 func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 	var err error
-	var hasError bool
-	var errText = "При получении списка глав произошла ошибка. Подробности в лог-файле."
-	var chaptersList []data.ChaptersList
+	var rawChaptersList []data.ChaptersList
+	chaptersList := make(map[string][]data.ChaptersList)
 	var transList []data.RMTranslators
 
 	url, _ := urlx.Parse(r.FormValue("mangaURL"))
@@ -27,36 +27,46 @@ func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 
 	switch host {
 	case "mangalib.me":
-		chaptersList, err = mangalib.GetChaptersList(mangaURL)
+		rawChaptersList, err = mangalib.GetChaptersList(mangaURL)
 		if err != nil {
-			hasError = true
 			logger.Log.Error("Ошибка при получении списка глав:", err)
+			tools.SendError("При получении списка глав произошла ошибка. Подробности в лог-файле.", w)
+			return
+		}
+
+		for _, ch := range rawChaptersList {
+			parts := strings.Split(ch.Path, "/")
+			volNum := strings.TrimLeft(parts[0], "v")
+			chaptersList[volNum] = append(chaptersList[volNum], ch)
 		}
 	case "readmanga.io", "mintmanga.live", "selfmanga.live", "23.allhen.online":
-		chaptersList, transList, err = readmanga.GetChaptersList(mangaURL)
+		rawChaptersList, transList, err = readmanga.GetChaptersList(mangaURL)
 		if err != nil {
-			hasError = true
 			logger.Log.Error("Ошибка при получении списка глав:", err)
+			tools.SendError("При получении списка глав произошла ошибка. Подробности в лог-файле.", w)
+			return
+		}
+
+		for _, ch := range rawChaptersList {
+			parts := strings.Split(ch.Path, "/")
+			volNum := strings.TrimLeft(parts[0], "vol")
+			chaptersList[volNum] = append(chaptersList[volNum], ch)
 		}
 	default:
-		hasError = true
-		errText = "Указанный вами адрес не поддерживается."
+		logger.Log.Error("Ошибка при получении списка глав:", err)
+		tools.SendError("Указанный вами адрес не поддерживается.", w)
+		return
 	}
 
 	resp := make(map[string]interface{})
 
-	if hasError {
-		resp["status"] = "error"
-		resp["payload"] = errText
+	if len(chaptersList) > 0 {
+		resp["status"] = "success"
+		resp["payload"] = chaptersList
+		resp["translators"] = transList
 	} else {
-		if len(chaptersList) > 0 {
-			resp["status"] = "success"
-			resp["payload"] = chaptersList
-			resp["translators"] = transList
-		} else {
-			resp["status"] = "error"
-			resp["payload"] = "Глав не найдено. Проверьте правильность ввода адреса манги."
-		}
+		resp["status"] = "error"
+		resp["errtext"] = "Глав не найдено. Проверьте правильность ввода адреса манги."
 	}
 
 	respData, _ := json.Marshal(resp)

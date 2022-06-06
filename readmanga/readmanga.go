@@ -19,6 +19,36 @@ import (
 	"github.com/lirix360/ReadmangaGrabber/tools"
 )
 
+func GetMangaInfo(mangaURL string) (data.MangaInfo, error) {
+	var err error
+	var mangaInfo data.MangaInfo
+
+	pageBody, err := tools.GetPage(mangaURL)
+	if err != nil {
+		return mangaInfo, err
+	}
+
+	chaptersPage, err := goquery.NewDocumentFromReader(pageBody)
+	if err != nil {
+		return mangaInfo, err
+	}
+
+	origTitle := chaptersPage.Find(".original-name").Text()
+
+	if origTitle == "" && chaptersPage.Find(".eng-name").Text() != "" {
+		origTitle = chaptersPage.Find(".eng-name").Text()
+	}
+
+	if origTitle == "" {
+		origTitle = chaptersPage.Find(".name").Text()
+	}
+
+	mangaInfo.TitleOrig = origTitle
+	mangaInfo.TitleRu = chaptersPage.Find(".name").Text()
+
+	return mangaInfo, nil
+}
+
 func GetChaptersList(mangaURL string) ([]data.ChaptersList, []data.RMTranslators, error) {
 	var err error
 	var chaptersList []data.ChaptersList
@@ -57,8 +87,6 @@ func GetChaptersList(mangaURL string) ([]data.ChaptersList, []data.RMTranslators
 
 		transList = append(transList, trans)
 	})
-
-	logger.Log.Info(transList)
 
 	return tools.ReverseList(chaptersList), transList, nil
 }

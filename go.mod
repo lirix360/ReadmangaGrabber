@@ -12,7 +12,8 @@ require (
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/phpdave11/gofpdf v1.4.2
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
-	golang.org/x/image v0.0.0-20220413100746-70e8d0d3baa9
+	go.etcd.io/bbolt v1.3.6
+	golang.org/x/image v0.0.0-20220601225756-64ec528b34cd
 	gopkg.in/olahol/melody.v1 v1.0.0-20170518105555-d52139073376
 )
 
@@ -31,7 +32,7 @@ require (
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	golang.org/x/net v0.0.0-20220520000938-2e3eb7b945c2 // indirect
+	golang.org/x/net v0.0.0-20220531201128-c960675eff93 // indirect
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
 	golang.org/x/text v0.3.7 // indirect
 )

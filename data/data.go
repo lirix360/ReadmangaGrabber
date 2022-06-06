@@ -1,5 +1,10 @@
 package data
 
+type MangaInfo struct {
+	TitleOrig string `json:"title_orig"`
+	TitleRu   string `json:"title_ru"`
+}
+
 type ChaptersList struct {
 	Title string `json:"title"`
 	Path  string `json:"path"`
