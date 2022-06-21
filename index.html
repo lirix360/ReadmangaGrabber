@@ -209,6 +209,8 @@
     <div id="topAlert" style="display: none;"></div>
 
     <script>
+        var clicked = false;
+
         var ws = new WebSocket("ws://127.0.0.1:8888/ws");
 
         ws.onmessage = function(msg) {
@@ -393,6 +395,11 @@
         }
 
         function checkItem(chB) {
+            if (clicked) {
+                clicked = false;
+                return false;
+            }
+            
             if ($('#' + chB).prop('checked')) {
                 $('#' + chB).prop('checked', false);
             } else {
@@ -435,6 +442,12 @@
                                 $('#chaptersList').append(html);
 
                                 x++;
+                            });
+                        });
+
+                        $('.single-chapter').each(function() {
+                            $(this).on('click', function(e) {
+                                clicked = true;
                             });
                         });
 
