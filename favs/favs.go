@@ -9,6 +9,7 @@ import (
 
 	bolt "go.etcd.io/bbolt"
 
+	"github.com/lirix360/ReadmangaGrabber/config"
 	"github.com/lirix360/ReadmangaGrabber/db"
 	"github.com/lirix360/ReadmangaGrabber/logger"
 	"github.com/lirix360/ReadmangaGrabber/mangalib"
@@ -128,9 +129,14 @@ func SaveFav(w http.ResponseWriter, r *http.Request) {
 		}
 
 		favData.ID = mangaID
-		favData.Name = mangaInfo.TitleOrig
 		favData.Lib = "MangaLib"
 		favData.URL = mangaURL
+
+		if config.Cfg.FavTitle == "ru" {
+			favData.Name = mangaInfo.TitleRu
+		} else {
+			favData.Name = mangaInfo.TitleOrig
+		}
 	case "readmanga.io", "mintmanga.live", "selfmanga.live", "23.allhen.online":
 		mangaInfo, err := readmanga.GetMangaInfo(mangaURL)
 		if err != nil {
@@ -140,9 +146,14 @@ func SaveFav(w http.ResponseWriter, r *http.Request) {
 		}
 
 		favData.ID = mangaID
-		favData.Name = mangaInfo.TitleOrig
 		favData.Lib = "ReadManga"
 		favData.URL = mangaURL
+
+		if config.Cfg.FavTitle == "ru" {
+			favData.Name = mangaInfo.TitleRu
+		} else {
+			favData.Name = mangaInfo.TitleOrig
+		}
 	default:
 		tools.SendError("Указанный вами адрес не поддерживается.", w)
 		return
@@ -187,9 +198,7 @@ func DeleteFav(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	url, _ := urlx.Parse(r.FormValue("mangaURL"))
-	mangaURL := strings.Split(url.String(), "?")[0]
-	mangaID := tools.GetMD5(mangaURL)
+	mangaID := r.FormValue("favID")
 
 	err = db.DBconn.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("MangaFavs"))

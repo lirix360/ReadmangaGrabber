@@ -14,6 +14,7 @@ import (
 
 type GrabberConfig struct {
 	Savepath  string `json:"savepath"`
+	FavTitle  string `json:"fav_title"`
 	Readmanga struct {
 		TimeoutImage   int `json:"timeout_image"`
 		TimeoutChapter int `json:"timeout_chapter"`
@@ -44,6 +45,7 @@ func createConfig(filePath string) {
 	newCfg := GrabberConfig{}
 
 	newCfg.Savepath = "Manga/"
+	newCfg.FavTitle = "ru"
 	newCfg.Readmanga.TimeoutImage = 300
 	newCfg.Readmanga.TimeoutChapter = 1000
 	newCfg.Mangalib.TimeoutImage = 500
@@ -89,6 +91,7 @@ func LoadConfig(w http.ResponseWriter, r *http.Request) {
 
 func SaveConfig(w http.ResponseWriter, r *http.Request) {
 	Cfg.Savepath = r.FormValue("savepath")
+	Cfg.FavTitle = r.FormValue("fav_title")
 	Cfg.Readmanga.TimeoutChapter, _ = strconv.Atoi(r.FormValue("readmanga_timeout_chapter"))
 	Cfg.Readmanga.TimeoutImage, _ = strconv.Atoi(r.FormValue("readmanga_timeout_image"))
 	Cfg.Mangalib.TimeoutChapter, _ = strconv.Atoi(r.FormValue("mangalib_timeout_chapter"))

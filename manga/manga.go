@@ -79,7 +79,8 @@ func DownloadManga(w http.ResponseWriter, r *http.Request) {
 	downloadOpts := data.DownloadOpts{
 		Type:      r.FormValue("downloadType"),
 		Chapters:  r.FormValue("selectedChapters"),
-		PDF:       r.FormValue("optPDF"),
+		PDFch:     r.FormValue("optPDFch"),
+		PDFvol:    r.FormValue("optPDFvol"),
 		CBZ:       r.FormValue("optCBZ"),
 		Del:       r.FormValue("optDEL"),
 		PrefTrans: r.FormValue("optPrefTrans"),

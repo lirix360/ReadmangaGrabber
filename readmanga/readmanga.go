@@ -94,6 +94,7 @@ func GetChaptersList(mangaURL string) ([]data.ChaptersList, []data.RMTranslators
 func DownloadManga(downData data.DownloadOpts) error {
 	var err error
 	var chaptersList []data.ChaptersList
+	savedFilesByVol := make(map[string][]string)
 
 	switch downData.Type {
 	case "all":
@@ -126,7 +127,9 @@ func DownloadManga(downData data.DownloadOpts) error {
 	}
 
 	for _, chapter := range chaptersList {
-		err = DownloadChapter(downData, chapter)
+		volume := strings.Split(chapter.Path, "/")[0]
+
+		chSavedFiles, err := DownloadChapter(downData, chapter)
 		if err != nil {
 			data.WSChan <- data.WSData{
 				Cmd: "updateLog",
@@ -136,6 +139,8 @@ func DownloadManga(downData data.DownloadOpts) error {
 				},
 			}
 		}
+
+		savedFilesByVol[volume] = append(savedFilesByVol[volume], chSavedFiles...)
 
 		chaptersCur++
 
@@ -150,6 +155,20 @@ func DownloadManga(downData data.DownloadOpts) error {
 		}
 	}
 
+	if downData.PDFvol == "1" {
+		data.WSChan <- data.WSData{
+			Cmd: "updateLog",
+			Payload: map[string]interface{}{
+				"type": "std",
+				"text": "Создаю PDF для томов",
+			},
+		}
+
+		chapterPath := path.Join(config.Cfg.Savepath, downData.SavePath)
+
+		pdf.CreateVolPDF(chapterPath, savedFilesByVol, downData.Del)
+	}
+
 	data.WSChan <- data.WSData{
 		Cmd: "downloadComplete",
 		Payload: map[string]interface{}{
@@ -160,7 +179,7 @@ func DownloadManga(downData data.DownloadOpts) error {
 	return nil
 }
 
-func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) error {
+func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) ([]string, error) {
 	var err error
 
 	data.WSChan <- data.WSData{
@@ -186,13 +205,13 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) e
 	page, err := tools.GetPage(chapterURL + "?mtr=1" + ptOpt)
 	if err != nil {
 		logger.Log.Error("Ошибка при получении страниц:", err)
-		return err
+		return nil, err
 	}
 
 	pageBody, err := ioutil.ReadAll(page)
 	if err != nil {
 		logger.Log.Error("Ошибка при получении страниц:", err)
-		return err
+		return nil, err
 	}
 
 	r := regexp.MustCompile(`rm_h\.initReader\(\s\[\d,\d\],\s\[(.+)\],\s0,\sfalse.+\);`)
@@ -224,7 +243,7 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) e
 		req, err := grab.NewRequest(chapterPath, imgURL)
 		if err != nil {
 			logger.Log.Error("Ошибка при скачивании страницы:", err)
-			return err
+			return nil, err
 		}
 
 		req.HTTPRequest.Header.Set("Referer", refURL.Scheme+"://"+refURL.Host+"/")
@@ -232,7 +251,7 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) e
 		resp := client.Do(req)
 		if resp.Err() != nil {
 			logger.Log.Error("Ошибка при скачивании страницы:", resp.Err())
-			return err
+			return nil, err
 		}
 
 		savedFiles = append(savedFiles, resp.Filename)
@@ -252,7 +271,7 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) e
 		tools.CreateCBZ(chapterPath)
 	}
 
-	if downData.PDF == "1" {
+	if downData.PDFch == "1" {
 		data.WSChan <- data.WSData{
 			Cmd: "updateLog",
 			Payload: map[string]interface{}{
@@ -264,12 +283,12 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) e
 		pdf.CreatePDF(chapterPath, savedFiles)
 	}
 
-	if downData.Del == "1" {
+	if downData.PDFvol != "1" && downData.Del == "1" {
 		err := os.RemoveAll(chapterPath)
 		if err != nil {
 			logger.Log.Error("Ошибка при удалении файлов:", err)
 		}
 	}
 
-	return nil
+	return savedFiles, nil
 }

@@ -7,6 +7,7 @@ import (
 	"image/jpeg"
 	"math"
 	"os"
+	"path"
 	"path/filepath"
 
 	_ "image/gif" // GIF images
@@ -19,6 +20,21 @@ import (
 
 	"github.com/phpdave11/gofpdf"
 )
+
+func CreateVolPDF(chapterPath string, savedFiles map[string][]string, delFlag string) {
+	for vol, files := range savedFiles {
+		savePath := path.Join(chapterPath, vol)
+
+		CreatePDF(savePath, files)
+
+		if delFlag == "1" {
+			err := os.RemoveAll(savePath)
+			if err != nil {
+				logger.Log.Error("Ошибка при удалении файлов:", err)
+			}
+		}
+	}
+}
 
 func CreatePDF(chapterPath string, savedFiles []string) error {
 	var opt gofpdf.ImageOptions

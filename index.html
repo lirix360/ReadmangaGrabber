@@ -27,7 +27,7 @@
 
         #topAlert {
             position: fixed;
-            top: 15px;
+            top: 65px;
             right: 15px;
             border-radius: 5px;
             padding: 10px;
@@ -51,35 +51,43 @@
     <div class="container">
         <div class="card border-secondary">
             <div class="card-header text-white bg-secondary">
-                Manga Grabber
-                <div class="float-end" data-bs-toggle="modal" data-bs-target="#optionsModal"><i class="bi bi-gear" style="cursor: pointer;" data-bs-toggle="tooltip" data-bs-placement="left" title="Настройки программы"></i></div>
+                <b>Manga Grabber</b>
+                <div class="float-end">
+                    <span data-bs-toggle="modal" data-bs-target="#favsModal" style="cursor: pointer; margin-right: 20px; color: rgb(137, 255, 137);"><i class="bi bi-bookmark-star"></i> Избранное</span>
+                    <span data-bs-toggle="modal" data-bs-target="#optionsModal" style="cursor: pointer;"><i class="bi bi-gear"></i> Настройки</span>
+                </div>
             </div>
             <div class="card-body bg-transparent">
                 <div class="alert alert-info alert-dismissible fade show" role="alert" id="updateAlert" style="display: none;">
                     Вышла новая версия приложения. Скачать можно тут: <a href="https://github.com/lirix360/ReadmangaGrabber/releases/latest" target="_blank">https://github.com/lirix360/ReadmangaGrabber/releases/latest</a>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-                <p>Manga Grabber - утилита для скачивания манги с ресурсов ReadManga, MintManga, SelfManga.</p>
-                <hr />
                 <form>
                     <div id="optionsSection">
                         <div class="mb-3">
-                            <label for="mangaURL" class="form-label">Настройки скачивания</label><br />
-                            <div class="form-check form-check-inline form-switch">
-                                <input class="form-check-input opt-data" type="checkbox" id="optPDF" onchange="checkDeleteOption();">
-                                <label class="form-check-label" for="optPDF">Создать PDF</label>
+                            <label for="mangaURL" class="form-label">Параметры скачивания:</label><br />
+                            Создать PDF:&nbsp;&nbsp;
+                            <div class="form-check form-check-inline form-switch" style="margin-right: 2px !important;">
+                                <input class="form-check-input opt-data" type="checkbox" id="optPDFch" onchange="checkPDFType();">
+                                <label class="form-check-label" for="optPDFch">по главам</label>
                             </div>
-                            <div class="form-check form-check-inline form-switch">
+                            <div class="form-check form-check-inline form-switch" style="margin-right: 2px !important;">
+                                <input class="form-check-input opt-data" type="checkbox" id="optPDFvol" onchange="checkPDFType();">
+                                <label class="form-check-label" for="optPDFvol">по томам</label>
+                            </div>
+                            &nbsp;|&nbsp;
+                            <div class="form-check form-check-inline form-switch" style="margin-right: 2px !important;">
                                 <input class="form-check-input opt-data" type="checkbox" id="optCBZ" onchange="checkDeleteOption();">
                                 <label class="form-check-label" for="optCBZ">Создать CBZ</label>
                             </div>
-                            <div class="form-check form-check-inline form-switch">
+                            &nbsp;|&nbsp;
+                            <div class="form-check form-check-inline form-switch" style="margin-right: 2px !important;">
                                 <input class="form-check-input opt-data" type="checkbox" id="optDEL" disabled>
                                 <label class="form-check-label" for="optDEL">Удалить скачанные файлы после создания PDF/CBZ</label>
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label for="mangaURL" class="form-label">Адрес манги <span style="margin-left: 10px;" data-bs-toggle="modal" data-bs-target="#favsModal"><i class="bi bi-bookmark-star" style="cursor: pointer;" data-bs-toggle="tooltip" data-bs-placement="right" title="Список избранной манги"></i></span></label>
+                            <label for="mangaURL" class="form-label">Адрес манги:</label>
                             <div class="input-group mb-3" style="margin-bottom: 5px !important;">
                                 <input type="text" class="form-control opt-data" id="mangaURL" required>
                                 <span class="input-group-text"><i class="bi bi-star" style="cursor: pointer;" data-bs-toggle="tooltip" data-bs-placement="left" title="Добавить в избранное" onclick="SaveFav();"></i></span>
@@ -113,12 +121,7 @@
                                 Предпочитаемый перевод: 
                                 <select class="form-select" id="transList"></select>
                             </div>
-                            <!-- <label for="formFile" class="form-label">Скачать главы:</label> -->
-                            <div class="row row-cols-4" id="chaptersList"></div>
-                        </div>
-                        <div class="mb-3" style="text-align: center;">
-                            <button type="button" class="btn btn-info" id="downloadSelectedChaptersBtn" onclick="downloadManga('chapters');" style="color: white !important;">Скачать выбранные главы</button>
-                            <button type="button" class="btn btn-success" id="downloadAllChaptersBtn" onclick="downloadManga('all');">Скачать все главы</button>
+                            <div class="row row-cols-4" id="chaptersList" style="margin-bottom: 50px;"></div>
                         </div>
                     </div>
                     <div id="downloadSection" style="display: none;">
@@ -137,6 +140,12 @@
             </div>
           </div>
     </div>
+    <div id="downloadButtons" style="display: none; text-align: center; position: fixed; bottom: 20px; z-index: 1000; width: 100%;">
+        <div style="display: inline-block; background-color: white; padding: 10px; margin: auto; border-radius: 10px;">
+            <button type="button" class="btn btn-info" id="downloadSelectedChaptersBtn" onclick="downloadManga('chapters');" style="color: white !important;">Скачать выбранные главы</button>
+            <button type="button" class="btn btn-success" id="downloadAllChaptersBtn" onclick="downloadManga('all');">Скачать все главы</button>
+        </div>
+    </div>
 
     <div class="modal" tabindex="-1" id="optionsModal" data-bs-backdrop="static" data-bs-keyboard="false">
         <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -151,6 +160,12 @@
                             <label for="optSavePath" class="form-label">Папка для скачивания манги</label>
                             <input type="text" class="form-control" id="optSavePath" required>
                             <div id="optSavePathHelp" class="form-text">Путь к папке для скачивания манги (например: Manga/ или D:/Downloads/MyManga/)</div>
+                        </div>
+                        <hr />
+                        <p><b>Избранное</b></p>
+                        <div class="mb-3">
+                            <label for="optSavePath" class="form-label">Использовать название при сохранении:</label>
+                            <select class="form-select" id="favTitleOpt"></select>
                         </div>
                         <hr />
                         <p><b>ReadManga (MintManga, SelfManga)</b></p>
@@ -222,6 +237,7 @@
                     break;
                 case 'initProgress':
                     $('#chaptersSection').hide();
+                    $('#downloadButtons').hide();
                     $('#log').html('');
                     $('#progressBar').prop("aria-valuenow", data.payload.valNow)
                     $('#progressBar').prop("aria-valuemax", data.payload.valMax)
@@ -279,7 +295,7 @@
                 $('#topAlert').addClass('topAlertE');
             }
 
-            $('#topAlert').show('active').delay(10000).hide('active');
+            $('#topAlert').show('active').delay(5000).hide('active');
         }
 
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
@@ -302,7 +318,7 @@
             $.get("/favsLoad", function(data) {
                 if (data.status == "success") {
                     $.each(data.favs, function(i, item) {
-                        var td = "<tr><td style=\"cursor: pointer;\" onclick=\"SelectFav(\'" + i + "\');\">" + item + "</td><td style=\"width: 50px;\"><i class=\"bi bi-trash\" style=\"color: red; cursor: pointer;\"></i></td></tr>";
+                        var td = "<tr id=\"fav_row_id_" + i + "\"><td style=\"cursor: pointer;\" onclick=\"SelectFav(\'" + i + "\');\">" + item + "</td><td style=\"width: 50px;\"><i class=\"bi bi-trash\" style=\"color: red; cursor: pointer;\" onclick=\"DeleteFav(\'" + i + "\');\"></i></td></tr>";
                         $('#favsTable').append(td);
                     });
                 } else {
@@ -312,6 +328,11 @@
         }
 
         function SaveFav() {
+            if ($('#mangaURL').val() == "") {
+                ShowTopAlert("Не указан адрес манги!", "e");
+                return false;
+            }
+
             $.post("/favsSave", {
                 mangaURL: $('#mangaURL').val()
             }, function(data) {
@@ -323,13 +344,13 @@
             });
         }
 
-        function DeleteFav() {
+        function DeleteFav(favID) {
             $.post("/favsDelete", {
-                mangaURL: $('#mangaURL').val()
+                favID: favID
             }, function(data) {
                 if (data.status == "success") {
                     ShowTopAlert("Манга успешно удалена из избранного!", "s");
-                    LoadFavs();
+                    $('#fav_row_id_' + favID).remove();
                 } else {
                     ShowTopAlert("При удалении из избранного произошла ошибка: " + data.errtext, "e");
                 }
@@ -358,8 +379,21 @@
         })
 
         function LoadConfig() {
+            var favLangs = ['ru', 'orig'];
+            var favLangTitles = ['Русское', 'Оригинальное'];
+
+            $('#favTitleOpt').html('');
+
             $.get("/loadConfig", function(data) {
                 $('#optSavePath').val(data.savepath);
+
+                for (x = 0; x < favLangs.length; x++) {
+                    if (data.fav_title == favLangs[x]) {
+                        $('#favTitleOpt').append('<option value="' + favLangs[x] + '" selected>' + favLangTitles[x] + '</option>');
+                    } else {
+                        $('#favTitleOpt').append('<option value="' + favLangs[x] + '">' + favLangTitles[x] + '</option>');
+                    }
+                }
 
                 $('#optRMChPause').val(data.readmanga.timeout_chapter / 1000);
                 $('#optRMFilePause').val(data.readmanga.timeout_image / 1000);
@@ -377,6 +411,7 @@
 
             $.get("/saveConfig", {
                 "savepath": $('#optSavePath').val(),
+                "fav_title": $('#favTitleOpt').val(),
                 "readmanga_timeout_chapter": optRMChPause.replace(',', '.') * 1000,
                 "readmanga_timeout_image": optRMFilePause.replace(',', '.') * 1000,
                 "mangalib_timeout_chapter": optMLChPause.replace(',', '.') * 1000,
@@ -386,8 +421,23 @@
             });
         }
 
+        function checkPDFType() {
+            if ($('#optPDFch').is(':checked') && !$('#optPDFvol').is(':checked')) {
+                $('#optPDFch').prop("disabled", false);
+                $('#optPDFvol').prop("disabled", true);
+            } else if (!$('#optPDFch').is(':checked') && $('#optPDFvol').is(':checked')) {
+                $('#optPDFch').prop("disabled", true);
+                $('#optPDFvol').prop("disabled", false);
+            } else {
+                $('#optPDFch').prop("disabled", false);
+                $('#optPDFvol').prop("disabled", false);
+            }
+
+            checkDeleteOption();
+        }
+
         function checkDeleteOption() {
-            if ($('#optPDF').is(':checked') || $('#optCBZ').is(':checked')) {
+            if ($('#optPDFch').is(':checked') || $('#optPDFvol').is(':checked') || $('#optCBZ').is(':checked')) {
                 $('#optDEL').prop("disabled", false);
             } else {
                 $('#optDEL').prop("disabled", true);
@@ -416,10 +466,16 @@
         }
 
         function getChaptersList() {
+            if ($('#mangaURL').val() == "") {
+                ShowTopAlert("Не указан адрес манги!", "e");
+                return false;
+            }
+
             $('.opt-data').attr('disabled', true);
             $('#downloadSection').hide();
             $('#successSection').hide();
             $('#chaptersSection').hide();
+            $('#downloadButtons').hide();
             $('#errorSection').hide();
             $('#waitSection').show();
             $('#chaptersList').html("");
@@ -464,6 +520,7 @@
 
                         $('#waitSection').hide();
                         $('#chaptersSection').show();
+                        $('#downloadButtons').show();
 
                         $('.opt-data').attr('disabled', false);
                         checkDeleteOption();
@@ -480,14 +537,21 @@
         }
 
         function downloadManga(type) {
+            if ($('#mangaURL').val() == "") {
+                ShowTopAlert("Не указан адрес манги!", "e");
+                return false;
+            }
+
             $('.opt-data').attr('disabled', true);
             $('#downloadSection').hide();
             $('#successSection').hide();
             $('#chaptersSection').hide();
+            $('#downloadButtons').hide();
 
-            var optPDF = $('#optPDF').is(':checked') ? 1 : 0;
+            var optPDFch = $('#optPDFch').is(':checked') ? 1 : 0;
+            var optPDFvol = $('#optPDFvol').is(':checked') ? 1 : 0;
             var optCBZ = $('#optCBZ').is(':checked') ? 1 : 0;
-            var optDEL = ($('#optPDF').is(':checked') || $('#optCBZ').is(':checked')) && $('#optDEL').is(':checked') ? 1 : 0;
+            var optDEL = ($('#optPDFch').is(':checked') || $('#optPDFvol').is(':checked') || $('#optCBZ').is(':checked')) && $('#optDEL').is(':checked') ? 1 : 0;
 
             var optPrefTrans = $('#transList').val();
 
@@ -504,7 +568,8 @@
             $.get("/downloadManga", {
                 "downloadType": type,
                 "mangaURL": $('#mangaURL').val(),
-                "optPDF": optPDF,
+                "optPDFch": optPDFch,
+                "optPDFvol": optPDFvol,
                 "optCBZ": optCBZ,
                 "optDEL": optDEL,
                 "optPrefTrans": optPrefTrans,
