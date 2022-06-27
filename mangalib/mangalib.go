@@ -15,6 +15,7 @@ import (
 
 	"github.com/lirix360/ReadmangaGrabber/config"
 	"github.com/lirix360/ReadmangaGrabber/data"
+	"github.com/lirix360/ReadmangaGrabber/history"
 	"github.com/lirix360/ReadmangaGrabber/logger"
 	"github.com/lirix360/ReadmangaGrabber/pdf"
 	"github.com/lirix360/ReadmangaGrabber/tools"
@@ -113,6 +114,7 @@ func GetChaptersList(mangaURL string) ([]data.ChaptersList, error) {
 func DownloadManga(downData data.DownloadOpts) error {
 	var err error
 	var chaptersList []data.ChaptersList
+	var saveChapters []string
 	savedFilesByVol := make(map[string][]string)
 
 	switch downData.Type {
@@ -163,6 +165,8 @@ func DownloadManga(downData data.DownloadOpts) error {
 
 		chaptersCur++
 
+		saveChapters = append(saveChapters, chapter.Path)
+
 		time.Sleep(time.Duration(config.Cfg.Mangalib.TimeoutChapter) * time.Microsecond)
 
 		data.WSChan <- data.WSData{
@@ -187,6 +191,9 @@ func DownloadManga(downData data.DownloadOpts) error {
 
 		pdf.CreateVolPDF(chapterPath, savedFilesByVol, downData.Del)
 	}
+
+	mangaID := tools.GetMD5(downData.MangaURL)
+	history.SaveHistory(mangaID, saveChapters)
 
 	data.WSChan <- data.WSData{
 		Cmd: "downloadComplete",

@@ -38,6 +38,14 @@ func init() {
 		logger.Log.Fatal("Ошибка при создании бакета (MangaFavs) в БД:", err)
 	}
 
+	err = DBconn.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists([]byte("History"))
+		return err
+	})
+	if err != nil {
+		logger.Log.Fatal("Ошибка при создании бакета (History) в БД:", err)
+	}
+
 	if !checkDBFile {
 		err = DBconn.Update(func(tx *bolt.Tx) error {
 			b := tx.Bucket([]byte("AppSettings"))

@@ -13,8 +13,13 @@ import (
 )
 
 type GrabberConfig struct {
-	Savepath  string `json:"savepath"`
-	FavTitle  string `json:"fav_title"`
+	Savepath string `json:"savepath"`
+	FavTitle string `json:"fav_title"`
+	ShowGUI  bool   `json:"show_gui"`
+	Server   struct {
+		Addr string `json:"addr"`
+		Port string `json:"port"`
+	} `json:"server"`
 	Readmanga struct {
 		TimeoutImage   int `json:"timeout_image"`
 		TimeoutChapter int `json:"timeout_chapter"`
@@ -39,6 +44,8 @@ func init() {
 	if err != nil {
 		logger.Log.Fatal("Ошибка при чтении файла конфигурации:", err)
 	}
+
+	UpdateCfg()
 }
 
 func createConfig(filePath string) {
@@ -46,6 +53,9 @@ func createConfig(filePath string) {
 
 	newCfg.Savepath = "Manga/"
 	newCfg.FavTitle = "ru"
+	newCfg.ShowGUI = true
+	newCfg.Server.Addr = "127.0.0.1"
+	newCfg.Server.Port = "8888"
 	newCfg.Readmanga.TimeoutImage = 300
 	newCfg.Readmanga.TimeoutChapter = 1000
 	newCfg.Mangalib.TimeoutImage = 500
@@ -100,4 +110,17 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 	Cfg.Mangalib.TimeoutImage = 500
 
 	writeConfig("grabber_config.json", Cfg)
+}
+
+func UpdateCfg() {
+	if Cfg.FavTitle == "" || Cfg.Server.Addr == "" || Cfg.Server.Port == "" {
+		Cfg.FavTitle = "ru"
+		Cfg.ShowGUI = true
+		Cfg.Server.Addr = "127.0.0.1"
+		Cfg.Server.Port = "8888"
+
+		writeConfig("grabber_config.json", Cfg)
+
+		readConfig("grabber_config.json")
+	}
 }

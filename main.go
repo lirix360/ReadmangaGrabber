@@ -18,6 +18,7 @@ import (
 	"github.com/lirix360/ReadmangaGrabber/data"
 	"github.com/lirix360/ReadmangaGrabber/db"
 	"github.com/lirix360/ReadmangaGrabber/favs"
+	"github.com/lirix360/ReadmangaGrabber/history"
 	"github.com/lirix360/ReadmangaGrabber/logger"
 	"github.com/lirix360/ReadmangaGrabber/manga"
 	"github.com/lirix360/ReadmangaGrabber/tools"
@@ -44,6 +45,9 @@ func main() {
 	r.HandleFunc("/favsGet", favs.GetFav)
 	r.HandleFunc("/favsSave", favs.SaveFav)
 	r.HandleFunc("/favsDelete", favs.DeleteFav)
+
+	r.HandleFunc("/loadHistory", history.LoadHistoryWeb)
+	r.HandleFunc("/saveHistory", history.SaveHistoryWeb)
 
 	r.HandleFunc("/getChaptersList", manga.GetChaptersList)
 	r.HandleFunc("/downloadManga", manga.DownloadManga)
@@ -81,15 +85,17 @@ func main() {
 
 	srv := &http.Server{
 		Handler:      r,
-		Addr:         "127.0.0.1:8888",
+		Addr:         config.Cfg.Server.Addr + ":" + config.Cfg.Server.Port,
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
 	}
 
-	err = browser.OpenURL("http://127.0.0.1:8888/")
-	if err != nil {
-		logger.Log.Fatal("Ошибка при открытии браузера:", err)
+	if config.Cfg.ShowGUI {
+		err = browser.OpenURL("http://" + config.Cfg.Server.Addr + ":" + config.Cfg.Server.Port + "/")
+		if err != nil {
+			logger.Log.Fatal("Ошибка при открытии браузера:", err)
+		}
 	}
 
 	signalChan := make(chan os.Signal, 1)

@@ -45,6 +45,10 @@
             background-color: rgba(229, 57, 57, .7);
             border: 1px #e53939 solid;
         }
+
+        .downloaded {
+            background-color: lightgreen;
+        }
     </style>
 </head>
 <body>
@@ -114,14 +118,20 @@
                         <hr />
                         <div class="alert alert-success" id="successData" role="alert"></div>
                     </div>
-                    <div id="chaptersSection" style="display: none;">
+                    <div id="chaptersSection" style="display: none; padding-bottom: 40px;">
                         <hr />
                         <div class="mb-3">
+                            <div style="margin-bottom: 10px; text-align: center;">
+                                <span style="background-color: lightgreen; padding: 3px 5px;">Зеленым фоном</span> отмечены ранее скачанные главы.
+                            </div>
                             <div id="prefTrans" style="display: none; margin-bottom: 25px;">
                                 Предпочитаемый перевод: 
                                 <select class="form-select" id="transList"></select>
                             </div>
-                            <div class="row row-cols-4" id="chaptersList" style="margin-bottom: 50px;"></div>
+                            <div class="row row-cols-4" id="chaptersList" style="margin-bottom: 5px;"></div>
+                            <div style="width: 100%; text-align: center;">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="saveChaptersBtn" onclick="markAsDownloaded();">Сохранить отмеченное как скачанное</button>
+                            </div>
                         </div>
                     </div>
                     <div id="downloadSection" style="display: none;">
@@ -465,6 +475,28 @@
             }
         }
 
+        function loadHistory(mangaURL) {
+            $.get("/loadHistory", {
+                "mangaURL": mangaURL
+            }, function(data) {
+                switch (data.status) {
+                    case 'success':
+                        $('.chbox').removeClass('downloaded');
+
+                        for (x = 0; x < data.history.length; x++) {
+                            var chID = data.history[x].replace('/', '_').replace('.', '_');
+
+                            $('#chbox_' + chID).addClass('downloaded');
+                        }
+
+                        break;
+                    case 'error':
+                        ShowTopAlert("При получении истории скачиваний произошла ошибка, подробности в лог-файле!", "e");
+                        break;
+                }
+            });
+        }
+
         function getChaptersList() {
             if ($('#mangaURL').val() == "") {
                 ShowTopAlert("Не указан адрес манги!", "e");
@@ -488,12 +520,12 @@
                         var x = 1;
 
                         $.each(data.payload, function(k, item) {
-                            var volHtml = "<div class=\"w-100\" style=\"margin-bottom: 15px !important;\"><div class=\"form-check form-switch\"><input class=\"form-check-input\" type=\"checkbox\" id=\"tom_" + k + "\" onchange=\"checkVolCh('" + k + "');\"><label class=\"form-check-label\" for=\"tom_" + k + "\"><b>Том " + k + "</b></label></div></div>";
+                            var volHtml = "<div class=\"w-100\" style=\"margin-bottom: 15px !important;\"><div class=\"form-check form-switch\"><input class=\"form-check-input single-volume\" type=\"checkbox\" id=\"tom_" + k + "\" onchange=\"checkVolCh('" + k + "');\"><label class=\"form-check-label\" for=\"tom_" + k + "\"><b>Том " + k + "</b></label></div></div>";
 
                             $('#chaptersList').append(volHtml);
 
                             $.each(item, function(i, ch) {
-                                var html = "<div class='col' style='margin-bottom: 15px;'><div style='border: 1px solid rgba(0, 0, 0, .125); border-radius: .25rem; margin: 0; width: 100%; height: 100%; padding: 5px 10px; cursor: pointer;' onclick='checkItem(\"chb_"+x+"\");'><div class='form-check form-switch'><input class='form-check-input single-chapter ch-tom-" + k + "' id='chb_"+x+"' type='checkbox' value='"+ch.path+"'><label class='form-check-label' style='cursor: pointer;' for='"+ch.path+"'>"+ch.title+"</label></div></div>";
+                                var html = "<div class='col' style='margin-bottom: 15px;'><div class=\"chbox\" id=\"chbox_" + ch.path.replace('/', '_').replace('.', '_') + "\" style='border: 1px solid rgba(0, 0, 0, .125); border-radius: .25rem; margin: 0; width: 100%; height: 100%; padding: 5px 10px; cursor: pointer;' onclick='checkItem(\"chb_" + x + "\");'><div class='form-check form-switch'><input class='form-check-input single-chapter ch-tom-" + k + "' id='chb_" + x + "' type='checkbox' value='" + ch.path + "'><label class='form-check-label' style='cursor: pointer;' for='" + ch.path + "'>" + ch.title + "</label></div></div>";
 
                                 $('#chaptersList').append(html);
 
@@ -506,6 +538,8 @@
                                 clicked = true;
                             });
                         });
+
+                        loadHistory($('#mangaURL').val());
 
                         if (data.translators && Object.keys(data.translators).length > 0) {
                             $.each(data.translators, function(i, item) {
@@ -575,6 +609,35 @@
                 "optPrefTrans": optPrefTrans,
                 "selectedChapters": chaptersJSON
             }, function(data) {});
+        }
+
+        function markAsDownloaded() {
+            if ($('#mangaURL').val() == "") {
+                ShowTopAlert("Не указан адрес манги!", "e");
+                return false;
+            }
+
+            $('.opt-data').attr('disabled', true);
+
+            var chapters = [];
+
+            $('.single-chapter:checked').each(function() {
+                chapters.push($(this).val());
+            });
+
+            var chaptersJSON = JSON.stringify(chapters);
+
+            $.get("/saveHistory", {
+                "mangaURL": $('#mangaURL').val(),
+                "selectedChapters": chaptersJSON
+            }, function(data) {
+                loadHistory($('#mangaURL').val());
+                $('.single-chapter').prop('checked', false);
+                $('.single-volume').prop('checked', false);
+                ShowTopAlert("История скачивания сохранена.", "s");
+            });
+
+            $('.opt-data').attr('disabled', false);
         }
     </script>
 </body>
