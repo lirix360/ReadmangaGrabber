@@ -39,7 +39,7 @@ func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 			volNum := strings.TrimLeft(parts[0], "v")
 			chaptersList[volNum] = append(chaptersList[volNum], ch)
 		}
-	case "readmanga.io", "mintmanga.live", "selfmanga.live", "23.allhen.online":
+	case "readmanga.io", "readmanga.live", "mintmanga.live", "selfmanga.live", "23.allhen.online":
 		rawChaptersList, transList, err = readmanga.GetChaptersList(mangaURL)
 		if err != nil {
 			logger.Log.Error("Ошибка при получении списка глав:", err)
@@ -95,7 +95,7 @@ func DownloadManga(w http.ResponseWriter, r *http.Request) {
 	switch host {
 	case "mangalib.me":
 		go mangalib.DownloadManga(downloadOpts)
-	case "readmanga.io", "mintmanga.live", "selfmanga.live", "23.allhen.online":
+	case "readmanga.io", "readmanga.live", "mintmanga.live", "selfmanga.live", "23.allhen.online":
 		go readmanga.DownloadManga(downloadOpts)
 	}
 
