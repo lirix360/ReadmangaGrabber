@@ -1,0 +1,6 @@
+{
+    "app_name": "Manga Grabber",
+    "icon_path_darwin": "resources/grabber3.icns",
+    "icon_path_linux": "resources/grabber3.png",
+    "icon_path_windows": "resources/grabber3.ico"
+}

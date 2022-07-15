@@ -22,7 +22,7 @@ func init() {
 	logFile := glg.FileWriter("grabber_log.log", 0644)
 
 	Log = glg.Get().
-		SetMode(glg.BOTH).
+		SetMode(glg.WRITER).
 		AddLevelWriter(glg.INFO, logFile).
 		AddLevelWriter(glg.ERR, logFile).
 		AddLevelWriter(glg.FATAL, logFile)

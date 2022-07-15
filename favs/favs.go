@@ -137,7 +137,7 @@ func SaveFav(w http.ResponseWriter, r *http.Request) {
 		} else {
 			favData.Name = mangaInfo.TitleOrig
 		}
-	case "readmanga.io", "mintmanga.live", "selfmanga.live", "23.allhen.online":
+	case "readmanga.io", "readmanga.live", "mintmanga.live", "selfmanga.live", "23.allhen.online":
 		mangaInfo, err := readmanga.GetMangaInfo(mangaURL)
 		if err != nil {
 			logger.Log.Error("Ошибка при получении информации о манге:", err)

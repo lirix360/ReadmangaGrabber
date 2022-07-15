@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="assets/bootstrap.min.css" rel="stylesheet">
     <script src="assets/bootstrap.bundle.min.js"></script>
-    <script src="assets/jquery-3.6.0.min.js"></script>
+    <script src="assets/jquery-3.6.0.min.js" onload="window.$ = window.jQuery = module.exports;"></script>
     <link href="assets/bootstrap-icons.css" rel="stylesheet">
     <link href="assets/fonts.css" rel="stylesheet">
     <title>Manga Grabber</title>
@@ -16,8 +16,9 @@
         }
 
         body {
-            padding: 10px;
+            padding: 0;
             font-family: 'Roboto', sans-serif;
+            overflow-y: scroll;
         }
 
         .log {
@@ -52,106 +53,104 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card border-secondary">
-            <div class="card-header text-white bg-secondary">
-                <b>Manga Grabber</b>
-                <div class="float-end">
-                    <span data-bs-toggle="modal" data-bs-target="#favsModal" style="cursor: pointer; margin-right: 20px; color: rgb(137, 255, 137);"><i class="bi bi-bookmark-star"></i> Избранное</span>
-                    <span data-bs-toggle="modal" data-bs-target="#optionsModal" style="cursor: pointer;"><i class="bi bi-gear"></i> Настройки</span>
+    <nav class="navbar navbar-dark bg-dark fixed-top">
+        <div class="container-xxl">
+            <a class="navbar-brand">Manga Grabber</a>
+            <div class="float-end">
+                <span data-bs-toggle="modal" data-bs-target="#favsModal" style="cursor: pointer; margin-right: 20px; color: rgb(137, 255, 137);"><i class="bi bi-bookmark-star"></i> Избранное</span>
+                <span data-bs-toggle="modal" data-bs-target="#optionsModal" style="cursor: pointer; color: white;"><i class="bi bi-gear"></i> Настройки</span>
+            </div>
+        </div>    
+    </nav>
+    <div class="container-xxl" style="margin-top: 80px;">
+        <div class="alert alert-info alert-dismissible fade show" role="alert" id="updateAlert" style="display: none;">
+            Вышла новая версия приложения. Скачать можно тут: <a href="https://github.com/lirix360/ReadmangaGrabber/releases/latest" target="_blank">https://github.com/lirix360/ReadmangaGrabber/releases/latest</a>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <form>
+            <div id="optionsSection">
+                <div class="mb-3">
+                    <label for="mangaURL" class="form-label">Параметры скачивания:</label><br />
+                    Создать PDF:&nbsp;&nbsp;
+                    <div class="form-check form-check-inline form-switch" style="margin-right: 2px !important;">
+                        <input class="form-check-input opt-data" type="checkbox" id="optPDFch" onchange="checkPDFType();">
+                        <label class="form-check-label" for="optPDFch">по главам</label>
+                    </div>
+                    <div class="form-check form-check-inline form-switch" style="margin-right: 2px !important;">
+                        <input class="form-check-input opt-data" type="checkbox" id="optPDFvol" onchange="checkPDFType();">
+                        <label class="form-check-label" for="optPDFvol">по томам</label>
+                    </div>
+                    &nbsp;|&nbsp;
+                    <div class="form-check form-check-inline form-switch" style="margin-right: 2px !important;">
+                        <input class="form-check-input opt-data" type="checkbox" id="optCBZ" onchange="checkDeleteOption();">
+                        <label class="form-check-label" for="optCBZ">Создать CBZ</label>
+                    </div>
+                    &nbsp;|&nbsp;
+                    <div class="form-check form-check-inline form-switch" style="margin-right: 2px !important;">
+                        <input class="form-check-input opt-data" type="checkbox" id="optDEL" disabled>
+                        <label class="form-check-label" for="optDEL">Удалить скачанные файлы после создания PDF/CBZ</label>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="mangaURL" class="form-label">Адрес манги:</label>
+                    <div class="input-group mb-3" style="margin-bottom: 5px !important;">
+                        <input type="text" class="form-control opt-data" id="mangaURL" required>
+                        <span class="input-group-text"><i class="bi bi-star" style="cursor: pointer;" data-bs-toggle="tooltip" data-bs-placement="left" title="Добавить в избранное" onclick="SaveFav();"></i></span>
+                    </div>
+                    <div id="mangaURLHelp" class="form-text">Адрес страницы со списком глав (например: https://readmanga.live/the_disappearance_of_yuki_nagato)</div>
+                </div>
+                <div class="mb-3" style="text-align: center;">
+                    <button type="button" class="btn btn-primary opt-data" id="getChaptersListBtn" onclick="getChaptersList();">Получить список глав</button>
                 </div>
             </div>
-            <div class="card-body bg-transparent">
-                <div class="alert alert-info alert-dismissible fade show" role="alert" id="updateAlert" style="display: none;">
-                    Вышла новая версия приложения. Скачать можно тут: <a href="https://github.com/lirix360/ReadmangaGrabber/releases/latest" target="_blank">https://github.com/lirix360/ReadmangaGrabber/releases/latest</a>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <div id="waitSection" style="display: none;">
+                <hr />
+                <div class="text-center">
+                    <div class="spinner-border text-info" role="status">
+                        <span class="visually-hidden">Идет загрузка...</span>
+                    </div>
                 </div>
-                <form>
-                    <div id="optionsSection">
-                        <div class="mb-3">
-                            <label for="mangaURL" class="form-label">Параметры скачивания:</label><br />
-                            Создать PDF:&nbsp;&nbsp;
-                            <div class="form-check form-check-inline form-switch" style="margin-right: 2px !important;">
-                                <input class="form-check-input opt-data" type="checkbox" id="optPDFch" onchange="checkPDFType();">
-                                <label class="form-check-label" for="optPDFch">по главам</label>
-                            </div>
-                            <div class="form-check form-check-inline form-switch" style="margin-right: 2px !important;">
-                                <input class="form-check-input opt-data" type="checkbox" id="optPDFvol" onchange="checkPDFType();">
-                                <label class="form-check-label" for="optPDFvol">по томам</label>
-                            </div>
-                            &nbsp;|&nbsp;
-                            <div class="form-check form-check-inline form-switch" style="margin-right: 2px !important;">
-                                <input class="form-check-input opt-data" type="checkbox" id="optCBZ" onchange="checkDeleteOption();">
-                                <label class="form-check-label" for="optCBZ">Создать CBZ</label>
-                            </div>
-                            &nbsp;|&nbsp;
-                            <div class="form-check form-check-inline form-switch" style="margin-right: 2px !important;">
-                                <input class="form-check-input opt-data" type="checkbox" id="optDEL" disabled>
-                                <label class="form-check-label" for="optDEL">Удалить скачанные файлы после создания PDF/CBZ</label>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="mangaURL" class="form-label">Адрес манги:</label>
-                            <div class="input-group mb-3" style="margin-bottom: 5px !important;">
-                                <input type="text" class="form-control opt-data" id="mangaURL" required>
-                                <span class="input-group-text"><i class="bi bi-star" style="cursor: pointer;" data-bs-toggle="tooltip" data-bs-placement="left" title="Добавить в избранное" onclick="SaveFav();"></i></span>
-                            </div>
-                            <div id="mangaURLHelp" class="form-text">Адрес страницы со списком глав (например: https://readmanga.live/the_disappearance_of_yuki_nagato)</div>
-                        </div>
-                        <div class="mb-3" style="text-align: center;">
-                            <button type="button" class="btn btn-primary opt-data" id="getChaptersListBtn" onclick="getChaptersList();">Получить список глав</button>
-                        </div>
-                    </div>
-                    <div id="waitSection" style="display: none;">
-                        <hr />
-                        <div class="text-center">
-                            <div class="spinner-border text-info" role="status">
-                              <span class="visually-hidden">Идет загрузка...</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="errorSection" style="display: none;">
-                        <hr />
-                        <div class="alert alert-danger" id="errorData" role="alert"></div>
-                    </div>
-                    <div id="successSection" style="display: none;">
-                        <hr />
-                        <div class="alert alert-success" id="successData" role="alert"></div>
-                    </div>
-                    <div id="chaptersSection" style="display: none; padding-bottom: 40px;">
-                        <hr />
-                        <div class="mb-3">
-                            <div style="margin-bottom: 10px; text-align: center;">
-                                <span style="background-color: lightgreen; padding: 3px 5px;">Зеленым фоном</span> отмечены ранее скачанные главы.
-                            </div>
-                            <div id="prefTrans" style="display: none; margin-bottom: 25px;">
-                                Предпочитаемый перевод: 
-                                <select class="form-select" id="transList"></select>
-                            </div>
-                            <div class="row row-cols-4" id="chaptersList" style="margin-bottom: 5px;"></div>
-                            <div style="width: 100%; text-align: center;">
-                                <button type="button" class="btn btn-outline-secondary btn-sm" id="saveChaptersBtn" onclick="markAsDownloaded();">Сохранить отмеченное как скачанное</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="downloadSection" style="display: none;">
-                        <hr />
-                        <div class="mb-3">
-                            <p>Идет скачивание:</p>
-                            <div class="progress">
-                                <div class="progress-bar progress-bar-striped bg-info progress-bar-animated" id="progressBar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%; height: 20px;"></div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <div class="card card-body log" id="log" style="max-height: 250px; overflow-y: auto;"></div>
-                        </div>
-                    </div>
-                </form>
             </div>
-          </div>
+            <div id="errorSection" style="display: none;">
+                <hr />
+                <div class="alert alert-danger" id="errorData" role="alert"></div>
+            </div>
+            <div id="successSection" style="display: none;">
+                <hr />
+                <div class="alert alert-success" id="successData" role="alert"></div>
+            </div>
+            <div id="chaptersSection" style="display: none; padding-bottom: 55px;">
+                <hr />
+                <div class="mb-3">
+                    <div style="margin-bottom: 10px; text-align: center;">
+                        <span style="background-color: lightgreen; padding: 3px 5px;">Зеленым фоном</span> отмечены ранее скачанные главы.
+                    </div>
+                    <div id="prefTrans" style="display: none; margin-bottom: 25px;">
+                        Предпочитаемый перевод: 
+                        <select class="form-select" id="transList"></select>
+                    </div>
+                    <div class="row row-cols-4" id="chaptersList" style="margin-bottom: 5px;"></div>
+                    <div style="width: 100%; text-align: center;">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="saveChaptersBtn" onclick="markAsDownloaded();">Сохранить отмеченное как скачанное</button>
+                    </div>
+                </div>
+            </div>
+            <div id="downloadSection" style="display: none;">
+                <hr />
+                <div class="mb-3">
+                    <p>Идет скачивание:</p>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped bg-info progress-bar-animated" id="progressBar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%; height: 20px;"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="card card-body log" id="log" style="max-height: 250px; overflow-y: auto;"></div>
+                </div>
+            </div>
+        </form>
     </div>
-    <div id="downloadButtons" style="display: none; text-align: center; position: fixed; bottom: 20px; z-index: 1000; width: 100%;">
-        <div style="display: inline-block; background-color: white; padding: 10px; margin: auto; border-radius: 10px;">
+    <div id="downloadButtons" style="display: none; text-align: center; position: fixed; bottom: 0; z-index: 1000; width: 100%; background-color: rgb(240, 240, 240);">
+        <div style="display: inline-block; padding: 10px; margin: auto;">
             <button type="button" class="btn btn-info" id="downloadSelectedChaptersBtn" onclick="downloadManga('chapters');" style="color: white !important;">Скачать выбранные главы</button>
             <button type="button" class="btn btn-success" id="downloadAllChaptersBtn" onclick="downloadManga('all');">Скачать все главы</button>
         </div>
@@ -291,7 +290,7 @@
             });
         }
 
-        CheckUpdate();
+        // CheckUpdate();
 
         function ShowTopAlert(text, type) {
             $('#topAlert').removeClass('topAlertE');
@@ -483,10 +482,12 @@
                     case 'success':
                         $('.chbox').removeClass('downloaded');
 
-                        for (x = 0; x < data.history.length; x++) {
-                            var chID = data.history[x].replace('/', '_').replace('.', '_');
+                        if (data.history != null) {
+                            for (x = 0; x < data.history.length; x++) {
+                                var chID = data.history[x].replace('/', '_').replace('.', '_');
 
-                            $('#chbox_' + chID).addClass('downloaded');
+                                $('#chbox_' + chID).addClass('downloaded');
+                            }
                         }
 
                         break;
