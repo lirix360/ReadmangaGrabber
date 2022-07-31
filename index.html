@@ -37,6 +37,17 @@
             z-index: 5000;
         }
 
+        #scroll {
+            position: fixed;
+            top: 50%;
+            right: 0;
+            background-color: rgba(0, 0, 0, .75);
+            color: white;
+            border-radius: 5px 0 0 5px;
+            font-size: 20px;
+            margin-top: -40px;
+        }
+
         .topAlertS {
             background-color: rgba(50, 136, 96, .7);
             border: 1px #338860 solid;
@@ -157,7 +168,7 @@
     </div>
 
     <div class="modal" tabindex="-1" id="optionsModal" data-bs-backdrop="static" data-bs-keyboard="false">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-fullscreen-xxl-down modal-xl modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h6 class="modal-title" style="font-weight: bold;">Настройки утилиты</h6>
@@ -215,7 +226,7 @@
     </div>
 
     <div class="modal" tabindex="-1" id="favsModal" data-bs-backdrop="static" data-bs-keyboard="false">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-fullscreen-xxl-down modal-xl modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h6 class="modal-title" style="font-weight: bold;">Избранное</h6>
@@ -228,6 +239,11 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div id="scroll">
+        <div style="padding: 10px 10px 5px 10px;"><i class="bi bi-arrow-up-circle" style="cursor: pointer;" onclick="window.scrollTo(0, 0);"></i></div>
+        <div style="padding: 5px 10px 10px 10px;"><i class="bi bi-arrow-down-circle" style="cursor: pointer;" onclick="window.scrollTo(0, document.body.scrollHeight);"></i></div>
     </div>
 
     <div id="topAlert" style="display: none;"></div>

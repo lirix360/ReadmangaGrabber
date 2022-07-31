@@ -137,7 +137,7 @@ func main() {
 		Height:    astikit.IntPtr(750),
 		MinWidth:  astikit.IntPtr(1200),
 		MinHeight: astikit.IntPtr(700),
-		Icon:      astikit.StrPtr("./grabber3.ico"),
+		Icon:      astikit.StrPtr("./grabber.png"),
 	}); err != nil {
 		logger.Log.Fatal("main: new window failed:", err)
 	}
