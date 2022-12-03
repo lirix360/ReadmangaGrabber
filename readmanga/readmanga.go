@@ -221,7 +221,7 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 		return nil, err
 	}
 
-	r := regexp.MustCompile(`rm_h\.initReader\(\s\[\d,\d\],\s\[(.+)\],\s0,\sfalse.+\);`)
+	r := regexp.MustCompile(`rm_h\.initReader\(\s\[?\d?,?\d?\]?,?\s?\[(.+)\],\s0,\sfalse.+\);`)
 
 	chList := r.FindStringSubmatch(string(pageBody))
 
