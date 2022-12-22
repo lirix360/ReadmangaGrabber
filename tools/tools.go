@@ -13,6 +13,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/aki237/nscjar"
+	"github.com/goware/urlx"
 	"github.com/headzoo/surf"
 	"github.com/mholt/archiver"
 
@@ -69,7 +71,57 @@ func GetPage(pageURL string) (io.ReadCloser, error) {
 		return nil, err
 	}
 
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:92.0) Gecko/20100101 Firefox/92.0")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:108.0) Gecko/20100101 Firefox/108.0")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Body, nil
+}
+
+func GetPageWithCookies(pageURL string) (io.ReadCloser, error) {
+	url, _ := urlx.Parse(pageURL)
+	host, _, _ := urlx.SplitHostPort(url)
+
+	cookieFile := ""
+
+	switch host {
+	case "readmanga.live":
+		cookieFile = "readmanga.txt"
+	case "mintmanga.live":
+		cookieFile = "mintmanga.txt"
+	case "selfmanga.live":
+		cookieFile = "selfmanga.txt"
+	}
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest("GET", pageURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:108.0) Gecko/20100101 Firefox/108.0")
+
+	if IsFileExist(cookieFile) {
+		f, err := os.Open(cookieFile)
+		if err != nil {
+			return nil, err
+		}
+
+		jar := nscjar.Parser{}
+
+		cookies, err := jar.Unmarshal(f)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, cookie := range cookies {
+			req.AddCookie(cookie)
+		}
+	}
 
 	resp, err := client.Do(req)
 	if err != nil {

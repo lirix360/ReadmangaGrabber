@@ -24,7 +24,7 @@ func GetMangaInfo(mangaURL string) (data.MangaInfo, error) {
 	var err error
 	var mangaInfo data.MangaInfo
 
-	pageBody, err := tools.GetPage(mangaURL)
+	pageBody, err := tools.GetPageWithCookies(mangaURL)
 	if err != nil {
 		return mangaInfo, err
 	}
@@ -55,7 +55,7 @@ func GetChaptersList(mangaURL string) ([]data.ChaptersList, []data.RMTranslators
 	var chaptersList []data.ChaptersList
 	var transList []data.RMTranslators
 
-	pageBody, err := tools.GetPage(mangaURL)
+	pageBody, err := tools.GetPageWithCookies(mangaURL)
 	if err != nil {
 		return chaptersList, transList, err
 	}
@@ -209,7 +209,7 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 		ptOpt = "&tran=" + downData.PrefTrans
 	}
 
-	page, err := tools.GetPage(chapterURL + "?mtr=1" + ptOpt)
+	page, err := tools.GetPageWithCookies(chapterURL + "?mtr=1" + ptOpt)
 	if err != nil {
 		logger.Log.Error("Ошибка при получении страниц:", err)
 		return nil, err
@@ -221,7 +221,7 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 		return nil, err
 	}
 
-	r := regexp.MustCompile(`rm_h\.initReader\(\s\[\d,\d\],\s\[(.+)\],\s0,\sfalse.+\);`)
+	r := regexp.MustCompile(`rm_h\.initReader\(\s\[(.+)\],\s0,\sfalse.+\);`)
 
 	chList := r.FindStringSubmatch(string(pageBody))
 
