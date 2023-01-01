@@ -106,8 +106,6 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 	Cfg.Readmanga.TimeoutImage, _ = strconv.Atoi(r.FormValue("readmanga_timeout_image"))
 	Cfg.Mangalib.TimeoutChapter, _ = strconv.Atoi(r.FormValue("mangalib_timeout_chapter"))
 	Cfg.Mangalib.TimeoutImage, _ = strconv.Atoi(r.FormValue("mangalib_timeout_image"))
-	Cfg.Mangalib.TimeoutChapter = 1000
-	Cfg.Mangalib.TimeoutImage = 500
 
 	writeConfig("grabber_config.json", Cfg)
 }

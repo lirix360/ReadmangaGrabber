@@ -24,7 +24,7 @@ func GetMangaInfo(mangaURL string) (data.MangaInfo, error) {
 	var err error
 	var mangaInfo data.MangaInfo
 
-	pageBody, err := tools.GetPageWithCookies(mangaURL)
+	pageBody, err := tools.GetPage(mangaURL)
 	if err != nil {
 		return mangaInfo, err
 	}
@@ -55,7 +55,7 @@ func GetChaptersList(mangaURL string) ([]data.ChaptersList, []data.RMTranslators
 	var chaptersList []data.ChaptersList
 	var transList []data.RMTranslators
 
-	pageBody, err := tools.GetPageWithCookies(mangaURL)
+	pageBody, err := tools.GetPage(mangaURL)
 	if err != nil {
 		return chaptersList, transList, err
 	}
@@ -71,7 +71,7 @@ func GetChaptersList(mangaURL string) ([]data.ChaptersList, []data.RMTranslators
 
 		chapter := data.ChaptersList{
 			Title: strings.Trim(s.Text(), "\n "),
-			Path:  path[1] + "/" + path[2],
+			Path:  path[1] + "/" + strings.Split(path[2], "?")[0],
 		}
 
 		chaptersList = append(chaptersList, chapter)
@@ -148,7 +148,7 @@ func DownloadManga(downData data.DownloadOpts) error {
 
 		saveChapters = append(saveChapters, chapter.Path)
 
-		time.Sleep(time.Duration(config.Cfg.Readmanga.TimeoutChapter) * time.Microsecond)
+		time.Sleep(time.Duration(config.Cfg.Readmanga.TimeoutChapter) * time.Millisecond)
 
 		data.WSChan <- data.WSData{
 			Cmd: "updateProgress",
@@ -209,7 +209,7 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 		ptOpt = "&tran=" + downData.PrefTrans
 	}
 
-	page, err := tools.GetPageWithCookies(chapterURL + "?mtr=1" + ptOpt)
+	page, err := tools.GetPage(chapterURL + "?mtr=1" + ptOpt)
 	if err != nil {
 		logger.Log.Error("Ошибка при получении страниц:", err)
 		return nil, err
@@ -245,7 +245,14 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 
 	for _, imgURL := range imageLinks {
 		client := grab.NewClient()
-		client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:92.0) Gecko/20100101 Firefox/92.0"
+		client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:108.0) Gecko/20100101 Firefox/108.0"
+
+		url, _ := urlx.Parse(imgURL)
+		host, _, _ := urlx.SplitHostPort(url)
+
+		if host == "one-way.work" {
+			imgURL = strings.Split(imgURL, "?")[0]
+		}
 
 		req, err := grab.NewRequest(chapterPath, imgURL)
 		if err != nil {
@@ -263,7 +270,7 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 
 		savedFiles = append(savedFiles, resp.Filename)
 
-		time.Sleep(time.Duration(config.Cfg.Readmanga.TimeoutImage) * time.Microsecond)
+		time.Sleep(time.Duration(config.Cfg.Readmanga.TimeoutImage) * time.Millisecond)
 	}
 
 	if downData.CBZ == "1" {

@@ -167,7 +167,7 @@ func DownloadManga(downData data.DownloadOpts) error {
 
 		saveChapters = append(saveChapters, chapter.Path)
 
-		time.Sleep(time.Duration(config.Cfg.Mangalib.TimeoutChapter) * time.Microsecond)
+		time.Sleep(time.Duration(config.Cfg.Mangalib.TimeoutChapter) * time.Millisecond)
 
 		data.WSChan <- data.WSData{
 			Cmd: "updateProgress",
@@ -275,7 +275,7 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 		imgURL := imgServer + info.Img.URL + page.URL
 
 		client := grab.NewClient()
-		client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0"
+		client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:108.0) Gecko/20100101 Firefox/108.0"
 		req, err := grab.NewRequest(chapterPath, imgURL)
 		req.HTTPRequest.Header.Set("Referer", chapterURL)
 		if err != nil {
@@ -289,7 +289,7 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 		}
 		savedFiles = append(savedFiles, resp.Filename)
 
-		time.Sleep(time.Duration(config.Cfg.Mangalib.TimeoutImage) * time.Microsecond)
+		time.Sleep(time.Duration(config.Cfg.Mangalib.TimeoutImage) * time.Millisecond)
 	}
 
 	if downData.CBZ == "1" {

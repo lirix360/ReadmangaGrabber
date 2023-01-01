@@ -64,24 +64,6 @@ func ReverseList(chaptersList []data.ChaptersList) []data.ChaptersList {
 }
 
 func GetPage(pageURL string) (io.ReadCloser, error) {
-	client := &http.Client{}
-
-	req, err := http.NewRequest("GET", pageURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:108.0) Gecko/20100101 Firefox/108.0")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.Body, nil
-}
-
-func GetPageWithCookies(pageURL string) (io.ReadCloser, error) {
 	url, _ := urlx.Parse(pageURL)
 	host, _, _ := urlx.SplitHostPort(url)
 
@@ -134,6 +116,26 @@ func GetPageWithCookies(pageURL string) (io.ReadCloser, error) {
 func GetPageCF(pageURL string) (io.ReadCloser, error) {
 	var body bytes.Buffer
 	bow := surf.NewBrowser()
+
+	cookieFile := "mangalib.txt"
+
+	if IsFileExist(cookieFile) {
+		f, err := os.Open(cookieFile)
+		if err != nil {
+			return nil, err
+		}
+
+		jar := nscjar.Parser{}
+
+		cookies, err := jar.Unmarshal(f)
+		if err != nil {
+			return nil, err
+		}
+
+		url, _ := urlx.Parse(pageURL)
+
+		bow.CookieJar().SetCookies(url, cookies)
+	}
 
 	err := bow.Open(pageURL)
 	if err != nil {
