@@ -65,7 +65,7 @@ func GetChaptersList(mangaURL string) ([]data.ChaptersList, []data.RMTranslators
 		return chaptersList, transList, err
 	}
 
-	chaptersPage.Find(".chapters-link a").Each(func(i int, s *goquery.Selection) {
+	chaptersPage.Find(".chapters-link a.chapter-link").Each(func(i int, s *goquery.Selection) {
 		href, _ := s.Attr("href")
 		path := strings.Split(strings.Trim(href, "/"), "/")
 
@@ -77,9 +77,24 @@ func GetChaptersList(mangaURL string) ([]data.ChaptersList, []data.RMTranslators
 		chaptersList = append(chaptersList, chapter)
 	})
 
+	// RM
 	chaptersPage.Find("#translation > option").Each(func(i int, s *goquery.Selection) {
 		trID, _ := s.Attr("value")
 		trName := s.Text()
+
+		trans := data.RMTranslators{
+			ID:   trID,
+			Name: trName,
+		}
+
+		transList = append(transList, trans)
+	})
+
+	// MM
+	chaptersPage.Find(".translator-selection-item").Each(func(i int, s *goquery.Selection) {
+		trID, _ := s.Attr("id")
+		trID = strings.Trim(trID, "tr-")
+		trName := s.Find(".translator-selection-name").Text()
 
 		trans := data.RMTranslators{
 			ID:   trID,
@@ -222,6 +237,7 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 	}
 
 	r := regexp.MustCompile(`rm_h\.initReader\(\s\[(.+)\],\s0,\sfalse.+\);`)
+	rNew := regexp.MustCompile(`rm_h\.readerInit\(\s\d,\[(.+)\],\sfalse.+\);`) // MM
 
 	chList := r.FindStringSubmatch(string(pageBody))
 
@@ -232,6 +248,19 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 			tmpParts := strings.Split(imageParts[i], ",")
 
 			imageLinks = append(imageLinks, strings.Trim(tmpParts[0], "\"'")+strings.Trim(tmpParts[2], "\"'"))
+		}
+	} else {
+		// MM hack
+		chList = rNew.FindStringSubmatch(string(pageBody))
+
+		if len(chList) > 0 && chList[1] != "" {
+			imageParts := strings.Split(strings.Trim(chList[1], "[]"), "],[")
+
+			for i := 0; i < len(imageParts); i++ {
+				tmpParts := strings.Split(imageParts[i], ",")
+
+				imageLinks = append(imageLinks, strings.Trim(tmpParts[0], "\"'")+strings.Trim(tmpParts[2], "\"'"))
+			}
 		}
 	}
 
