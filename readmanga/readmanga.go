@@ -1,7 +1,9 @@
 package readmanga
 
 import (
-	"io/ioutil"
+	"bytes"
+	"errors"
+	"io"
 	"os"
 	"path"
 	"regexp"
@@ -148,12 +150,24 @@ func DownloadManga(downData data.DownloadOpts) error {
 
 		chSavedFiles, err := DownloadChapter(downData, chapter)
 		if err != nil {
-			data.WSChan <- data.WSData{
-				Cmd: "updateLog",
-				Payload: map[string]interface{}{
-					"type": "err",
-					"text": "-- Ошибка при скачивании главы:" + err.Error(),
-				},
+			if err.Error() == "noauth" {
+				data.WSChan <- data.WSData{
+					Cmd: "authErr",
+					Payload: map[string]interface{}{
+						"type": "err",
+						"text": "Для скачивания указанной манги необходимо авторизаваться на сайте!",
+					},
+				}
+
+				return nil
+			} else {
+				data.WSChan <- data.WSData{
+					Cmd: "updateLog",
+					Payload: map[string]interface{}{
+						"type": "err",
+						"text": "-- Ошибка при скачивании главы:" + err.Error(),
+					},
+				}
 			}
 		}
 
@@ -230,14 +244,23 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 		return nil, err
 	}
 
-	pageBody, err := ioutil.ReadAll(page)
+	pageBody, err := io.ReadAll(page)
 	if err != nil {
 		logger.Log.Error("Ошибка при получении страниц:", err)
 		return nil, err
 	}
 
-	r := regexp.MustCompile(`rm_h\.initReader\(\s\[(.+)\],\s0,\sfalse.+\);`)
-	rNew := regexp.MustCompile(`rm_h\.readerInit\(\s\d,\[(.+)\],\sfalse.+\);`) // MM
+	chapterPage, err := goquery.NewDocumentFromReader(bytes.NewReader(pageBody))
+	if err != nil {
+		return nil, err
+	}
+
+	if chapterPage.Find(".auth-page .alert").Text() != "" {
+		return nil, errors.New("noauth")
+	}
+
+	r := regexp.MustCompile(`rm_h\.initReader\(\s\[(.+)\],\s0,\s(false|true).+\);`)
+	rNew := regexp.MustCompile(`rm_h\.readerInit\(\s\d,\[(.+)\],\s(false|true).+\);`) // MM
 
 	chList := r.FindStringSubmatch(string(pageBody))
 
@@ -274,7 +297,7 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 
 	for _, imgURL := range imageLinks {
 		client := grab.NewClient()
-		client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:108.0) Gecko/20100101 Firefox/108.0"
+		client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0"
 
 		url, _ := urlx.Parse(imgURL)
 		host, _, _ := urlx.SplitHostPort(url)

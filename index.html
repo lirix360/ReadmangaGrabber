@@ -91,7 +91,15 @@
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label for="mangaURL" class="form-label">Адрес манги:</label>
+                            <label for="mangaURL" class="form-label" style="width: 100% !important;">
+                                Адрес манги:
+                                <div class="float-end">
+                                    Авторизация: 
+                                    <i class="bi bi-check-lg" id="authOK" style="color: #338860; display: none;"></i>
+                                    <i class="bi bi-x-lg" id="authNO" style="color: #e53939;"></i>
+                                    (<span data-bs-toggle="modal" data-bs-target="#authModal" style="cursor: pointer; color: #0d6efd;">инструкция</span>)
+                                </div>
+                            </label>
                             <div class="input-group mb-3" style="margin-bottom: 5px !important;">
                                 <input type="text" class="form-control opt-data" id="mangaURL" required>
                                 <span class="input-group-text"><i class="bi bi-star" style="cursor: pointer;" data-bs-toggle="tooltip" data-bs-placement="left" title="Добавить в избранное" onclick="SaveFav();"></i></span>
@@ -231,6 +239,25 @@
         </div>
     </div>
 
+    <div class="modal" tabindex="-1" id="authModal" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title" style="font-weight: bold;">Сохранение cookies для сайтов</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <ol>
+                        <li>Войдите со своими логином/паролем на сайт с которого вы хотите скачать защищенную мангу</li>
+                        <li>Для сохранения cookies в файл используйте расширение браузера (например, для Chrome и аналогов: <a target="_blank" href="https://chrome.google.com/webstore/detail/get-cookiestxt/bgaddhkoddajcdgocldbbfleckgcbcid">Get cookies.txt</a>, для FireFox: <a target="_blank" href="https://addons.mozilla.org/ru/firefox/addon/cookies-txt/">cookies.txt</a>)</li>
+                        <li>Сохраненный файл переименуйте соответственно нужному сайту, например, mintmanga.txt или mangalib.txt, и скопируйте в папку с программой</li>
+                    </ol>
+                    <p>В случае если у вас есть сохраненный файл с cookies, но манга не скачивается вероятно истек срок действия cookies, сохраните их еще раз.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="topAlert" style="display: none;"></div>
 
     <script>
@@ -266,6 +293,12 @@
                     }
                     $("#log").scrollTop($("#log")[0].scrollHeight);
                     break;
+                case 'authErr':
+                    $('#downloadSection').hide();
+                    $('#errorData').html(data.payload.text);
+                    $('#errorSection').show();
+                    $('.opt-data').attr('disabled', false);
+                    break;
                 case 'downloadComplete':
                     $('#downloadSection').hide();
                     $('#successData').html(data.payload.text);
@@ -279,14 +312,14 @@
             $.get("/getAppVer", function(data) {
                 if (data.status == "success") {
                     $.get("https://manga.liri.me/checkupdate?appver=" + data.appver, function(datar) {
-                    if (datar.status == "success") {
-                        if (datar.hasnewver) {
-                            $('#updateAlert').show('active').delay(60000).hide('active');
+                        if (datar.status == "success") {
+                            if (datar.hasnewver) {
+                                $('#updateAlert').show('active').delay(60000).hide('active');
+                            }
+                        } else {
+                            console.log(datar.errtext);
                         }
-                    } else {
-                        console.log(datar.errtext);
-                    }
-            });
+                    });
                 }
             });
         }
@@ -300,6 +333,25 @@
                 getChaptersList();
             }
         });
+        elemMU.addEventListener("input", function(event) {
+            if (elemMU.value && (elemMU.value.includes('readmanga') || elemMU.value.includes('mintmanga') || elemMU.value.includes('selfmanga') || elemMU.value.includes('mangalib'))) {
+                CheckAuth(elemMU.value);
+            }
+        });
+
+        function CheckAuth(url) {
+            $.post("/checkAuth", {
+                URL: url
+            }, function(data) {
+                if (data.status == "success") {
+                    $('#authOK').show();
+                    $('#authNO').hide();
+                } else {
+                    $('#authOK').hide();
+                    $('#authNO').show();
+                }
+            });
+        }
 
         function ShowTopAlert(text, type) {
             $('#topAlert').removeClass('topAlertE');
@@ -583,6 +635,8 @@
                 ShowTopAlert("Не указан адрес манги!", "e");
                 return false;
             }
+
+            CheckAuth(elemMU.value);
 
             $('.opt-data').attr('disabled', true);
             $('#downloadSection').hide();

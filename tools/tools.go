@@ -35,6 +35,32 @@ func GetAppVer(w http.ResponseWriter, r *http.Request) {
 	w.Write(respData)
 }
 
+func CheckAuth(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		logger.Log.Error("Ошибка при парсинге формы:", err)
+		SendError("Ошибка при парсинге формы.", w)
+		return
+	}
+
+	urlStr := r.FormValue("URL")
+
+	url, _ := urlx.Parse(urlStr)
+	host, _, _ := urlx.SplitHostPort(url)
+
+	resp := make(map[string]interface{})
+	resp["status"] = "error"
+
+	if IsFileExist(strings.Split(host, ".")[0] + ".txt") {
+		resp["status"] = "success"
+	}
+
+	respData, _ := json.Marshal(resp)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(respData)
+}
+
 func GetMD5(text string) string {
 	hasher := md5.New()
 	hasher.Write([]byte(text))
@@ -85,7 +111,7 @@ func GetPage(pageURL string) (io.ReadCloser, error) {
 		return nil, err
 	}
 
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:108.0) Gecko/20100101 Firefox/108.0")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0")
 
 	if IsFileExist(cookieFile) {
 		f, err := os.Open(cookieFile)

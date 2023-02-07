@@ -37,6 +37,7 @@ func main() {
 	m := melody.New()
 
 	r.HandleFunc("/getAppVer", tools.GetAppVer)
+	r.HandleFunc("/checkAuth", tools.CheckAuth)
 
 	r.HandleFunc("/saveConfig", config.SaveConfig)
 	r.HandleFunc("/loadConfig", config.LoadConfig)
