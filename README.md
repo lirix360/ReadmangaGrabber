@@ -10,7 +10,11 @@
 
 **Возможности скачивания платной манги нет и не будет!**
 
-![Интерфейс](https://raw.githubusercontent.com/lirix360/ReadmangaGrabber/gh-pages/screenshot-v2.png)
+## Использование
+
+* Скачать последнюю версию для вашей ОС из [раздела релизов](https://github.com/lirix360/ReadmangaGrabber/releases/latest)
+* Распаковать в удобное место
+* Запустить исполняемый файл (grabber_win_x64.exe, grabber_linux_x64 или grabber_osx_x64)
 
 ## Сохранение cookies для ReadManga/MintManga
 
@@ -19,3 +23,12 @@
 3. Сохраненный файл переименуйте соответственно нужному сайту, readmanga.txt или mintmanga.txt, и положите в папку с программой
 
 В случае если у вас есть сохраненный файл с cookies, но манга не скачивается вероятно истек срок действия cookies, сохраните их еще раз.
+
+![Интерфейс](https://raw.githubusercontent.com/lirix360/ReadmangaGrabber/gh-pages/screenshot-v2.png)
+
+## Компиляция из исходного кода
+
+* Установите [последнюю версию](https://go.dev/dl) языка Go
+* Скачайте исходный код в удобное место с помощью git или в виде zip-файла
+* Запустите файл сборки соответствующий вашей ОС (build_win.bat, build_linux.sh или build_osx.sh)
+* Скомпилированная версия утилиты появится в папке builds/ваша_ОС
