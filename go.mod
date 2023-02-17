@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.0
+	github.com/aki237/nscjar v0.0.0-20210417074043-bbb606196143
 	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/gorilla/mux v1.8.0
 	github.com/goware/urlx v0.3.2
@@ -13,14 +14,12 @@ require (
 	github.com/phpdave11/gofpdf v1.4.2
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	go.etcd.io/bbolt v1.3.6
-	golang.org/x/image v0.1.0
+	golang.org/x/image v0.5.0
 	gopkg.in/olahol/melody.v1 v1.0.0-20170518105555-d52139073376
 )
 
 require (
 	github.com/PuerkitoBio/purell v1.2.0 // indirect
-	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
-	github.com/aki237/nscjar v0.0.0-20210417074043-bbb606196143 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/frankban/quicktest v1.14.3 // indirect
@@ -35,5 +34,5 @@ require (
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/net v0.2.0 // indirect
 	golang.org/x/sys v0.2.0 // indirect
-	golang.org/x/text v0.4.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 )
