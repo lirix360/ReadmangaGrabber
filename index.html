@@ -263,6 +263,12 @@
     <script>
         var clicked = false;
 
+        window.addEventListener("beforeunload", function (e) {
+            e.preventDefault();
+            $.get("/closeApp");
+            return e.returnValue = '';
+        });
+
         var ws = new WebSocket("ws://127.0.0.1:8888/ws");
 
         ws.onmessage = function(msg) {
@@ -372,11 +378,6 @@
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl)
         })
-
-        window.addEventListener("beforeunload", function (e) {
-            $.get("/closeApp");
-            return null;
-        });
 
         $('#favsModal').on('shown.bs.modal', function () {
             LoadFavs();
