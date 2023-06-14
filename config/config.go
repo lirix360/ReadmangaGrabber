@@ -46,6 +46,22 @@ func init() {
 	}
 
 	UpdateCfg()
+
+	if Cfg.Readmanga.TimeoutImage < 500 {
+		Cfg.Readmanga.TimeoutImage = 500
+	}
+
+	if Cfg.Readmanga.TimeoutChapter < 1000 {
+		Cfg.Readmanga.TimeoutChapter = 1000
+	}
+
+	if Cfg.Mangalib.TimeoutImage < 500 {
+		Cfg.Mangalib.TimeoutImage = 500
+	}
+
+	if Cfg.Mangalib.TimeoutChapter < 1000 {
+		Cfg.Mangalib.TimeoutChapter = 1000
+	}
 }
 
 func createConfig(filePath string) {
@@ -56,7 +72,7 @@ func createConfig(filePath string) {
 	newCfg.ShowGUI = true
 	newCfg.Server.Addr = "127.0.0.1"
 	newCfg.Server.Port = "8888"
-	newCfg.Readmanga.TimeoutImage = 300
+	newCfg.Readmanga.TimeoutImage = 500
 	newCfg.Readmanga.TimeoutChapter = 1000
 	newCfg.Mangalib.TimeoutImage = 500
 	newCfg.Mangalib.TimeoutChapter = 1000

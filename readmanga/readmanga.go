@@ -57,7 +57,7 @@ func GetChaptersList(mangaURL string) ([]data.ChaptersList, []data.RMTranslators
 	var chaptersList []data.ChaptersList
 	var transList []data.RMTranslators
 
-	pageBody, err := tools.GetPage(mangaURL)
+	pageBody, err := tools.GetPageCF(mangaURL)
 	if err != nil {
 		return chaptersList, transList, err
 	}
@@ -67,7 +67,7 @@ func GetChaptersList(mangaURL string) ([]data.ChaptersList, []data.RMTranslators
 		return chaptersList, transList, err
 	}
 
-	chaptersPage.Find(".chapters-link a.chapter-link").Each(func(i int, s *goquery.Selection) {
+	chaptersPage.Find(".chapters a.chapter-link").Each(func(i int, s *goquery.Selection) {
 		href, _ := s.Attr("href")
 		path := strings.Split(strings.Trim(href, "/"), "/")
 
@@ -241,12 +241,26 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 	page, err := tools.GetPage(chapterURL + "?mtr=1" + ptOpt)
 	if err != nil {
 		logger.Log.Error("Ошибка при получении страниц:", err)
+		data.WSChan <- data.WSData{
+			Cmd: "updateLog",
+			Payload: map[string]interface{}{
+				"type": "err",
+				"text": "-- Ошибка при получении страниц:" + err.Error(),
+			},
+		}
 		return nil, err
 	}
 
 	pageBody, err := io.ReadAll(page)
 	if err != nil {
 		logger.Log.Error("Ошибка при получении страниц:", err)
+		data.WSChan <- data.WSData{
+			Cmd: "updateLog",
+			Payload: map[string]interface{}{
+				"type": "err",
+				"text": "-- Ошибка при получении страниц:" + err.Error(),
+			},
+		}
 		return nil, err
 	}
 
@@ -309,7 +323,14 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 		req, err := grab.NewRequest(chapterPath, imgURL)
 		if err != nil {
 			logger.Log.Error("Ошибка при скачивании страницы:", err)
-			return nil, err
+			data.WSChan <- data.WSData{
+				Cmd: "updateLog",
+				Payload: map[string]interface{}{
+					"type": "err",
+					"text": "-- Ошибка при скачивании страницы:" + err.Error(),
+				},
+			}
+			continue
 		}
 
 		req.HTTPRequest.Header.Set("Referer", refURL.Scheme+"://"+refURL.Host+"/")
@@ -317,7 +338,14 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 		resp := client.Do(req)
 		if resp.Err() != nil {
 			logger.Log.Error("Ошибка при скачивании страницы:", resp.Err())
-			return nil, err
+			data.WSChan <- data.WSData{
+				Cmd: "updateLog",
+				Payload: map[string]interface{}{
+					"type": "err",
+					"text": "-- Ошибка при скачивании страницы:" + resp.Err().Error(),
+				},
+			}
+			continue
 		}
 
 		savedFiles = append(savedFiles, resp.Filename)
