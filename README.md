@@ -19,7 +19,7 @@
 ## Сохранение cookies для ReadManga/MintManga
 
 1. Войдите со своими логином/паролем на нужный сайт
-2. Для сохранения cookies в файл используйте расширение браузера (например, для Chrome и аналогов: [Get cookies.txt](https://chrome.google.com/webstore/detail/get-cookiestxt/bgaddhkoddajcdgocldbbfleckgcbcid), для FireFox: [cookies.txt](https://addons.mozilla.org/ru/firefox/addon/cookies-txt/))
+2. Для сохранения cookies в файл используйте расширение браузера (например, для Chrome и аналогов: [Get cookies.txt LOCALLY](https://chrome.google.com/webstore/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc), для FireFox: [cookies.txt](https://addons.mozilla.org/ru/firefox/addon/cookies-txt/))
 3. Сохраненный файл переименуйте соответственно нужному сайту, readmanga.txt или mintmanga.txt, и положите в папку с программой
 
 В случае если у вас есть сохраненный файл с cookies, но манга не скачивается вероятно истек срок действия cookies, сохраните их еще раз.
