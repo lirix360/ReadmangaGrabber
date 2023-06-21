@@ -280,12 +280,26 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 		req.HTTPRequest.Header.Set("Referer", chapterURL)
 		if err != nil {
 			logger.Log.Error("Ошибка при скачивании страницы:", err)
-			return nil, err
+			data.WSChan <- data.WSData{
+				Cmd: "updateLog",
+				Payload: map[string]interface{}{
+					"type": "err",
+					"text": "-- Ошибка при скачивании страницы:" + err.Error(),
+				},
+			}
+			continue
 		}
 		resp := client.Do(req)
 		if resp.Err() != nil {
 			logger.Log.Error("Ошибка при скачивании страницы:", resp.Err())
-			return nil, err
+			data.WSChan <- data.WSData{
+				Cmd: "updateLog",
+				Payload: map[string]interface{}{
+					"type": "err",
+					"text": "-- Ошибка при скачивании страницы:" + err.Error(),
+				},
+			}
+			continue
 		}
 		savedFiles = append(savedFiles, resp.Filename)
 
