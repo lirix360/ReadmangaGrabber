@@ -1,6 +1,6 @@
 module github.com/lirix360/ReadmangaGrabber
 
-go 1.18
+go 1.21
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
@@ -14,6 +14,7 @@ require (
 	github.com/phpdave11/gofpdf v1.4.2
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	go.etcd.io/bbolt v1.3.7
+	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	golang.org/x/image v0.12.0
 	gopkg.in/olahol/melody.v1 v1.0.0-20170518105555-d52139073376
 )

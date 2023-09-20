@@ -55,3 +55,8 @@ func init() {
 		MaxWidth:  793,
 	}
 }
+
+type CurrentURLS struct {
+	MangaLib  []string
+	ReadManga []string
+}

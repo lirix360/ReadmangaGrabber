@@ -250,7 +250,7 @@
                     <ol>
                         <li>Войдите со своими логином/паролем на сайт с которого вы хотите скачать защищенную мангу</li>
                         <li>Для сохранения cookies в файл используйте расширение браузера (например, для Chrome и аналогов: <a target="_blank" href="https://chrome.google.com/webstore/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc">Get cookies.txt LOCALLY</a>, для FireFox: <a target="_blank" href="https://addons.mozilla.org/ru/firefox/addon/cookies-txt/">cookies.txt</a>)</li>
-                        <li>Сохраненный файл переименуйте соответственно нужному сайту, например, mintmanga.txt или mangalib.txt, и скопируйте в папку с программой</li>
+                        <li>Сохраненный файл переименуйте соответственно домену нужного сайта с расширением .txt, например, readmanga.live.txt или mangalib.me.txt, и положите в папку с программой</li>
                     </ol>
                     <p>В случае если у вас есть сохраненный файл с cookies, но манга не скачивается вероятно истек срок действия cookies, сохраните их еще раз.</p>
                 </div>
@@ -264,9 +264,9 @@
         var clicked = false;
 
         window.addEventListener("beforeunload", function (e) {
-            e.preventDefault();
+            // e.preventDefault();
             $.get("/closeApp");
-            return e.returnValue = '';
+            // return e.returnValue = '';
         });
 
         var ws = new WebSocket("ws://127.0.0.1:8888/ws");

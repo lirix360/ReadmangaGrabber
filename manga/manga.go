@@ -6,7 +6,9 @@ import (
 	"strings"
 
 	"github.com/goware/urlx"
+	"golang.org/x/exp/slices"
 
+	"github.com/lirix360/ReadmangaGrabber/config"
 	"github.com/lirix360/ReadmangaGrabber/data"
 	"github.com/lirix360/ReadmangaGrabber/logger"
 	"github.com/lirix360/ReadmangaGrabber/mangalib"
@@ -25,8 +27,7 @@ func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 
 	mangaURL := strings.Split(url.String(), "?")[0]
 
-	switch host {
-	case "mangalib.me":
+	if slices.Contains(config.Cfg.CurrentURLs.MangaLib, host) {
 		rawChaptersList, err = mangalib.GetChaptersList(mangaURL)
 		if err != nil {
 			logger.Log.Error("Ошибка при получении списка глав:", err)
@@ -39,7 +40,7 @@ func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 			volNum := strings.TrimLeft(parts[0], "v")
 			chaptersList[volNum] = append(chaptersList[volNum], ch)
 		}
-	case "readmanga.io", "readmanga.live", "mintmanga.live", "mintmanga.com", "m.mintmanga.live", "selfmanga.live":
+	} else if slices.Contains(config.Cfg.CurrentURLs.ReadManga, host) {
 		rawChaptersList, transList, err = readmanga.GetChaptersList(mangaURL)
 		if err != nil {
 			logger.Log.Error("Ошибка при получении списка глав:", err)
@@ -52,7 +53,7 @@ func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 			volNum := strings.TrimLeft(parts[0], "vol")
 			chaptersList[volNum] = append(chaptersList[volNum], ch)
 		}
-	default:
+	} else {
 		logger.Log.Error("Ошибка при получении списка глав:", err)
 		tools.SendError("Указанный вами адрес не поддерживается.", w)
 		return
@@ -92,10 +93,9 @@ func DownloadManga(w http.ResponseWriter, r *http.Request) {
 	downloadOpts.MangaURL = strings.Split(url.String(), "?")[0]
 	downloadOpts.SavePath = strings.Trim(url.Path, "/")
 
-	switch host {
-	case "mangalib.me":
+	if slices.Contains(config.Cfg.CurrentURLs.MangaLib, host) {
 		go mangalib.DownloadManga(downloadOpts)
-	case "readmanga.io", "readmanga.live", "mintmanga.live", "mintmanga.com", "m.mintmanga.live", "selfmanga.live":
+	} else if slices.Contains(config.Cfg.CurrentURLs.ReadManga, host) {
 		go readmanga.DownloadManga(downloadOpts)
 	}
 

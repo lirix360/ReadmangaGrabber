@@ -228,7 +228,7 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 
 	chapterURL := strings.TrimRight(downData.MangaURL, "/") + "/" + curChapter.Path
 
-	refURL, _ := urlx.Parse(downData.MangaURL)
+	// refURL, _ := urlx.Parse(downData.MangaURL)
 
 	var imageLinks []string
 
@@ -333,7 +333,7 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 			continue
 		}
 
-		req.HTTPRequest.Header.Set("Referer", refURL.Scheme+"://"+refURL.Host+"/")
+		// req.HTTPRequest.Header.Set("Referer", refURL.Scheme+"://"+refURL.Host+"/")
 
 		resp := client.Do(req)
 		if resp.Err() != nil {

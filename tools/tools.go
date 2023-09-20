@@ -51,7 +51,7 @@ func CheckAuth(w http.ResponseWriter, r *http.Request) {
 	resp := make(map[string]interface{})
 	resp["status"] = "error"
 
-	if IsFileExist(strings.Split(host, ".")[0] + ".txt") {
+	if IsFileExist(host + ".txt") {
 		resp["status"] = "success"
 	}
 
@@ -93,16 +93,7 @@ func GetPage(pageURL string) (io.ReadCloser, error) {
 	url, _ := urlx.Parse(pageURL)
 	host, _, _ := urlx.SplitHostPort(url)
 
-	cookieFile := ""
-
-	switch host {
-	case "readmanga.live":
-		cookieFile = "readmanga.txt"
-	case "mintmanga.live":
-		cookieFile = "mintmanga.txt"
-	case "selfmanga.live":
-		cookieFile = "selfmanga.txt"
-	}
+	cookieFile := host + ".txt"
 
 	client := &http.Client{}
 
@@ -143,7 +134,10 @@ func GetPageCF(pageURL string) (io.ReadCloser, error) {
 	var body bytes.Buffer
 	bow := surf.NewBrowser()
 
-	cookieFile := "mangalib.txt"
+	url, _ := urlx.Parse(pageURL)
+	host, _, _ := urlx.SplitHostPort(url)
+
+	cookieFile := host + ".txt"
 
 	if IsFileExist(cookieFile) {
 		f, err := os.Open(cookieFile)

@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/lirix360/ReadmangaGrabber/data"
 	"github.com/lirix360/ReadmangaGrabber/logger"
 )
 
@@ -28,6 +29,7 @@ type GrabberConfig struct {
 		TimeoutImage   int `json:"timeout_image"`
 		TimeoutChapter int `json:"timeout_chapter"`
 	} `json:"mangalib"`
+	CurrentURLs data.CurrentURLS
 }
 
 var Cfg GrabberConfig
@@ -61,6 +63,12 @@ func init() {
 
 	if Cfg.Mangalib.TimeoutChapter < 1000 {
 		Cfg.Mangalib.TimeoutChapter = 1000
+	}
+
+	Cfg.CurrentURLs = GetURLs()
+
+	if len(Cfg.CurrentURLs.MangaLib) == 0 || len(Cfg.CurrentURLs.ReadManga) == 0 {
+		logger.Log.Fatal("Ошибка при получении списков текущих URL:", err)
 	}
 }
 
@@ -137,4 +145,29 @@ func UpdateCfg() {
 
 		readConfig("grabber_config.json")
 	}
+}
+
+func GetURLs() data.CurrentURLS {
+	tmpData := map[string]string{}
+	curURLs := data.CurrentURLS{}
+
+	resp, err := http.Get("https://raw.githubusercontent.com/lirix360/ReadmangaGrabber/master/lib_urls.json")
+	if err != nil {
+		logger.Log.Error(err)
+		return curURLs
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logger.Log.Error(err)
+		return curURLs
+	}
+
+	json.Unmarshal(body, &tmpData)
+
+	curURLs.MangaLib = strings.Split(tmpData["mangalib"], ", ")
+	curURLs.ReadManga = strings.Split(tmpData["readmanga"], ", ")
+
+	return curURLs
 }
