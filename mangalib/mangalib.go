@@ -274,8 +274,6 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 
 			imgURL := s + info.Img.URL + page.URL
 
-			logger.Log.Info(imgURL)
-
 			client := grab.NewClient()
 			client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0"
 			req, err := grab.NewRequest(chapterPath, imgURL)
