@@ -6,6 +6,7 @@ import (
 	"image/draw"
 	"image/jpeg"
 	"math"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -48,10 +49,10 @@ func CreatePDF(chapterPath string, savedFiles []string) error {
 				Cmd: "updateLog",
 				Payload: map[string]interface{}{
 					"type": "err",
-					"text": "-- Ошибка при создании PDF файла (" + chapterPath + ".pdf):" + err.Error(),
+					"text": "-- Файл (" + file + ") пропущен из-за ошибки при декодировании",
 				},
 			}
-			return err
+			continue
 		}
 
 		width, height, err := resizeToFit(imageFile)
@@ -60,10 +61,10 @@ func CreatePDF(chapterPath string, savedFiles []string) error {
 				Cmd: "updateLog",
 				Payload: map[string]interface{}{
 					"type": "err",
-					"text": "-- Ошибка при создании PDF файла (" + chapterPath + ".pdf):" + err.Error(),
+					"text": "-- Файл (" + file + ") пропущен из-за ошибки при обработке:" + err.Error(),
 				},
 			}
-			return err
+			continue
 		}
 
 		if width < height {
@@ -126,21 +127,30 @@ func convertImg(srcImg string) (string, error) {
 	srcFile := filepath.Base(srcImg)
 	dstFile := filepath.Join(dstPath, srcFile+".jpg")
 
-	fileExt := filepath.Ext(srcImg)
+	imgFileDetect, _ := os.Open(srcImg)
+
+	buff := make([]byte, 512)
+	if _, err = imgFileDetect.Read(buff); err != nil {
+		return "", err
+	}
+
+	imgFileDetect.Close()
+
+	imgType := http.DetectContentType(buff)
 
 	imgFile, _ := os.Open(srcImg)
 
-	if fileExt == ".webp" {
+	if imgType == "image/webp" {
 		imgSrc, err = webp.Decode(imgFile)
 		if err != nil {
-			logger.Log.Error("Ошибка при декодировании файла ("+srcImg+"):", err)
+			logger.Log.Error("Файл ("+srcImg+") пропущен из-за ошибки при декодировании", err)
 			imgFile.Close()
 			return "", err
 		}
 	} else {
 		imgSrc, _, err = image.Decode(imgFile)
 		if err != nil {
-			logger.Log.Error("Ошибка при декодировании файла ("+srcImg+"):", err)
+			logger.Log.Error("Файл ("+srcImg+") пропущен из-за ошибки при декодировании", err)
 			imgFile.Close()
 			return "", err
 		}

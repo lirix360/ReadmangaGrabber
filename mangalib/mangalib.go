@@ -256,52 +256,57 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 		os.MkdirAll(chapterPath, 0755)
 	}
 
-	var imgServer string
-
-	switch info.Img.Server {
-	case "main":
-		imgServer = info.Servers.Main
-	case "secondary":
-		imgServer = info.Servers.Secondary
-	case "compress":
-		imgServer = info.Servers.Compress
-	case "fourth":
-		imgServer = info.Servers.Fourth
-	}
+	serversList := make(map[string]string)
+	serversList["compress"] = info.Servers.Compress
+	serversList["main"] = info.Servers.Main
+	serversList["fourth"] = info.Servers.Fourth
+	serversList["secondary"] = info.Servers.Secondary
 
 	var savedFiles []string
 
 	for _, page := range pages {
-		imgURL := imgServer + info.Img.URL + page.URL
+		isFail := false
 
-		client := grab.NewClient()
-		client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0"
-		req, err := grab.NewRequest(chapterPath, imgURL)
-		req.HTTPRequest.Header.Set("Referer", chapterURL)
-		if err != nil {
-			logger.Log.Error("Ошибка при скачивании страницы:", err)
+		for _, s := range serversList {
+			if s == "" {
+				continue
+			}
+
+			imgURL := s + info.Img.URL + page.URL
+
+			logger.Log.Info(imgURL)
+
+			client := grab.NewClient()
+			client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0"
+			req, err := grab.NewRequest(chapterPath, imgURL)
+			req.HTTPRequest.Header.Set("Referer", chapterURL)
+			if err != nil {
+				logger.Log.Error("Ошибка при создании запроса страницы:", err)
+				isFail = true
+				continue
+			}
+
+			resp := client.Do(req)
+			if resp.Err() != nil {
+				logger.Log.Error("Ошибка при скачивании страницы:", resp.Err())
+				isFail = true
+				continue
+			}
+
+			savedFiles = append(savedFiles, resp.Filename)
+			isFail = false
+			break
+		}
+
+		if isFail {
 			data.WSChan <- data.WSData{
 				Cmd: "updateLog",
 				Payload: map[string]interface{}{
 					"type": "err",
-					"text": "-- Ошибка при скачивании страницы:" + err.Error(),
+					"text": "-- Ошибка при скачивании страницы:" + page.URL,
 				},
 			}
-			continue
 		}
-		resp := client.Do(req)
-		if resp.Err() != nil {
-			logger.Log.Error("Ошибка при скачивании страницы:", resp.Err())
-			data.WSChan <- data.WSData{
-				Cmd: "updateLog",
-				Payload: map[string]interface{}{
-					"type": "err",
-					"text": "-- Ошибка при скачивании страницы:" + err.Error(),
-				},
-			}
-			continue
-		}
-		savedFiles = append(savedFiles, resp.Filename)
 
 		time.Sleep(time.Duration(config.Cfg.Mangalib.TimeoutImage) * time.Millisecond)
 	}
