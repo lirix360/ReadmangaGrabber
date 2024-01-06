@@ -37,3 +37,13 @@
     font-display: swap;
     src: url('RobotoMono-Light.ttf');
 }
+
+[data-bs-theme=dark] {
+    .green-back, .downloaded {
+        color: #212529 !important;
+    }
+
+    .download-buttons {
+        background-color: #343a40 !important;
+    }
+}

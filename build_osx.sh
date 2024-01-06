@@ -2,6 +2,8 @@
 
 dt=$(date '+%Y%m%d%H%M');
 
+echo $dt
+
 export GOOS=darwin
 export GOARCH=amd64
 

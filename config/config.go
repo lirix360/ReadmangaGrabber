@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
@@ -29,6 +28,15 @@ type GrabberConfig struct {
 		TimeoutImage   int `json:"timeout_image"`
 		TimeoutChapter int `json:"timeout_chapter"`
 	} `json:"mangalib"`
+	Proxy struct {
+		Type string `json:"type"`
+		Addr string `json:"addr"`
+		Port string `json:"port"`
+		Use  struct {
+			Mangalib  bool `json:"mangalib"`
+			Readmanga bool `json:"readmanga"`
+		} `json:"use"`
+	} `json:"proxy"`
 	CurrentURLs data.CurrentURLS
 }
 
@@ -89,7 +97,7 @@ func createConfig(filePath string) {
 }
 
 func readConfig(filePath string) error {
-	credFile, err := ioutil.ReadFile(filePath)
+	credFile, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
 	}
@@ -108,7 +116,7 @@ func writeConfig(filePath string, config GrabberConfig) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(filePath, configJSON, 0644)
+	err = os.WriteFile(filePath, configJSON, 0644)
 	if err != nil {
 		return err
 	}
@@ -130,6 +138,21 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 	Cfg.Readmanga.TimeoutImage, _ = strconv.Atoi(r.FormValue("readmanga_timeout_image"))
 	Cfg.Mangalib.TimeoutChapter, _ = strconv.Atoi(r.FormValue("mangalib_timeout_chapter"))
 	Cfg.Mangalib.TimeoutImage, _ = strconv.Atoi(r.FormValue("mangalib_timeout_image"))
+
+	Cfg.Proxy.Type = r.FormValue("proxy_type")
+	Cfg.Proxy.Addr = r.FormValue("proxy_addr")
+	Cfg.Proxy.Port = r.FormValue("proxy_port")
+
+	Cfg.Proxy.Use.Readmanga = false
+	Cfg.Proxy.Use.Mangalib = false
+
+	if r.FormValue("proxy_use_rm") == "1" {
+		Cfg.Proxy.Use.Readmanga = true
+	}
+
+	if r.FormValue("proxy_use_ml") == "1" {
+		Cfg.Proxy.Use.Mangalib = true
+	}
 
 	writeConfig("grabber_config.json", Cfg)
 }

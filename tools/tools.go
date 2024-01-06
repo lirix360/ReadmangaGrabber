@@ -11,6 +11,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/aki237/nscjar"
@@ -23,13 +24,46 @@ import (
 	"github.com/lirix360/ReadmangaGrabber/logger"
 )
 
-func GetAppVer(w http.ResponseWriter, r *http.Request) {
-	resp := make(map[string]interface{})
+func CheckUpdate(w http.ResponseWriter, r *http.Request) {
+	tmpData := map[string]string{}
+	jsonResp := make(map[string]interface{})
 
-	resp["status"] = "success"
-	resp["appver"] = config.APPver
+	hasError := false
 
-	respData, _ := json.Marshal(resp)
+	resp, err := http.Get("https://raw.githubusercontent.com/lirix360/ReadmangaGrabber/master/version.json")
+	if err != nil {
+		logger.Log.Error(err)
+		hasError = true
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logger.Log.Error(err)
+		hasError = true
+	}
+
+	err = json.Unmarshal(body, &tmpData)
+	if err != nil {
+		logger.Log.Error(err)
+		hasError = true
+	}
+
+	if !hasError {
+		lastVer, _ := strconv.Atoi(tmpData["last_version"])
+		appVer, _ := strconv.Atoi(config.APPver)
+
+		jsonResp["status"] = "success"
+		jsonResp["has_update"] = false
+
+		if appVer < lastVer {
+			jsonResp["has_update"] = true
+		}
+	} else {
+		jsonResp["status"] = "error"
+	}
+
+	respData, _ := json.Marshal(jsonResp)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(respData)
@@ -97,8 +131,19 @@ func GetPage(pageURL string) (io.ReadCloser, error) {
 
 	client := &http.Client{}
 
+	if config.Cfg.Proxy.Use.Readmanga {
+		proxyUrl, err := url.Parse(config.Cfg.Proxy.Type + "://" + config.Cfg.Proxy.Addr + ":" + config.Cfg.Proxy.Port)
+		logger.Log.Info("Proxy:", proxyUrl.String())
+		if err != nil {
+			return nil, err
+		}
+
+		client.Transport = &http.Transport{Proxy: http.ProxyURL(proxyUrl)}
+	}
+
 	req, err := http.NewRequest("GET", pageURL, nil)
 	if err != nil {
+		logger.Log.Error("Ошибка при инициализации запроса:", err)
 		return nil, err
 	}
 
@@ -124,6 +169,7 @@ func GetPage(pageURL string) (io.ReadCloser, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
+		logger.Log.Error("Ошибка при выполнении запроса:", err)
 		return nil, err
 	}
 
@@ -138,6 +184,16 @@ func GetPageCF(pageURL string) (io.ReadCloser, error) {
 	host, _, _ := urlx.SplitHostPort(url)
 
 	cookieFile := host + ".txt"
+
+	if config.Cfg.Proxy.Use.Mangalib {
+		proxyUrl, err := url.Parse(config.Cfg.Proxy.Type + "://" + config.Cfg.Proxy.Addr + ":" + config.Cfg.Proxy.Port)
+		logger.Log.Info("Proxy:", proxyUrl.String())
+		if err != nil {
+			return nil, err
+		}
+
+		bow.SetTransport(&http.Transport{Proxy: http.ProxyURL(proxyUrl)})
+	}
 
 	if IsFileExist(cookieFile) {
 		f, err := os.Open(cookieFile)
@@ -159,10 +215,15 @@ func GetPageCF(pageURL string) (io.ReadCloser, error) {
 
 	err := bow.Open(pageURL)
 	if err != nil {
+		logger.Log.Error("Ошибка при инициализации запроса:", err)
 		return nil, err
 	}
 
-	bow.Download(&body)
+	_, err = bow.Download(&body)
+	if err != nil {
+		logger.Log.Error("Ошибка при выполнении запроса:", err)
+		return nil, err
+	}
 
 	return io.NopCloser(strings.NewReader(body.String())), nil
 }

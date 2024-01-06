@@ -13,6 +13,8 @@ set _hh=%_hours:~-2%
 set _mm=%_minutes:~-2%
 set _date=%_year%%_month%%_day%%_hh%%_mm%
 
+echo %_date%
+
 set GOOS=windows
 set GOARCH=amd64
 

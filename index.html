@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" id="root" data-bs-theme="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -57,6 +57,11 @@
             <div class="card-header text-white bg-secondary">
                 <b>Manga Grabber</b>
                 <div class="float-end">
+                    <span style="padding-right: 30px;">
+                        <i class="bi bi-sun-fill"></i>
+                        <div class="form-check form-switch" style="display: inline-block; margin-top: -10px; margin-bottom: -6px; padding: 0 0 0 50px;" id="themeSwitch"><input class="form-check-input" type="checkbox" role="switch" id="themeSwitchCh" checked></div>
+                        <i class="bi bi-moon-stars-fill"></i>
+                    </span>
                     <span data-bs-toggle="modal" data-bs-target="#favsModal" style="cursor: pointer; margin-right: 20px; color: rgb(137, 255, 137);"><i class="bi bi-bookmark-star"></i> Избранное</span>
                     <span data-bs-toggle="modal" data-bs-target="#optionsModal" style="cursor: pointer;"><i class="bi bi-gear"></i> Настройки</span>
                 </div>
@@ -130,7 +135,7 @@
                         <hr />
                         <div class="mb-3">
                             <div style="margin-bottom: 10px; text-align: center;">
-                                <span style="background-color: lightgreen; padding: 3px 5px;">Зеленым фоном</span> отмечены ранее скачанные главы.
+                                <span style="background-color: lightgreen; padding: 3px 5px;" class="green-back">Зеленым фоном</span> отмечены ранее скачанные главы.
                             </div>
                             <div id="prefTrans" style="display: none; margin-bottom: 25px;">
                                 Предпочитаемый перевод: 
@@ -159,7 +164,7 @@
           </div>
     </div>
     <div id="downloadButtons" style="display: none; text-align: center; position: fixed; bottom: 20px; z-index: 1000; width: 100%;">
-        <div style="display: inline-block; background-color: white; padding: 10px; margin: auto; border-radius: 10px;">
+        <div style="display: inline-block; background-color: white; padding: 10px; margin: auto; border-radius: 10px;" class="download-buttons">
             <button type="button" class="btn btn-info" id="downloadSelectedChaptersBtn" onclick="downloadManga('chapters');" style="color: white !important;">Скачать выбранные главы</button>
             <button type="button" class="btn btn-success" id="downloadAllChaptersBtn" onclick="downloadManga('all');">Скачать все главы</button>
         </div>
@@ -175,9 +180,45 @@
                 <div class="modal-body">
                     <form id="optionsForm">
                         <div class="mb-3">
-                            <label for="optSavePath" class="form-label">Папка для скачивания манги</label>
+                            <label for="optSavePath" class="form-label"><b>Папка для скачивания манги</b></label>
                             <input type="text" class="form-control" id="optSavePath" required>
                             <div id="optSavePathHelp" class="form-text">Путь к папке для скачивания манги (например: Manga/ или D:/Downloads/MyManga/)</div>
+                        </div>
+                        <hr />
+                        <p><b>Прокси</b></p>
+                        <div class="mb-3">
+                            <div class="row">
+                                <div class="col">
+                                    <label for="optProxyType" class="form-label">Тип</label>
+                                    <select class="form-select" id="optProxyType"></select>
+                                </div>
+                                <div class="col">
+                                    <label for="optProxyAddr" class="form-label">Адрес прокси</label>
+                                    <input type="text" class="form-control flData" id="optProxyAddr">
+                                </div>
+                                <div class="col">
+                                    <label for="optProxyPort" class="form-label">Порт прокси</label>
+                                    <input type="text" class="form-control flData" id="optProxyPort">
+                                </div>
+                            </div>
+                        </div>
+                        <p>Использовать прокси для:</p>
+                        <div class="mb-3">
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="optProxyUseRM">
+                                        <label class="form-check-label" for="optProxyUseRM">ReadManga</label>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="optProxyUseML">
+                                        <label class="form-check-label" for="optProxyUseML">MangaLib</label>
+                                        <div id="optProxyUseMLHelp" class="form-text">Не рекомендуется</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <hr />
                         <p><b>Избранное</b></p>
@@ -263,6 +304,17 @@
     <script>
         var clicked = false;
 
+        $(function() {
+            CheckUpdate();
+
+            var theme = localStorage.getItem("mangaGrabberTheme");
+
+            if (theme == "light") {
+                $('#root').attr('data-bs-theme', 'light');
+                $('#themeSwitchCh').prop('checked', false);
+            };
+        });
+
         window.addEventListener("beforeunload", function (e) {
             // e.preventDefault();
             $.get("/closeApp");
@@ -315,22 +367,14 @@
         }
 
         function CheckUpdate() {
-            $.get("/getAppVer", function(data) {
+            $.get("/checkUpdate", function(data) {
                 if (data.status == "success") {
-                    $.get("https://manga.liri.me/checkupdate?appver=" + data.appver, function(datar) {
-                        if (datar.status == "success") {
-                            if (datar.hasnewver) {
-                                $('#updateAlert').show('active').delay(60000).hide('active');
-                            }
-                        } else {
-                            console.log(datar.errtext);
-                        }
-                    });
+                    if (data.has_update) {
+                        $('#updateAlert').show('active').delay(60000).hide('active');
+                    }
                 }
             });
         }
-
-        // CheckUpdate();
 
         var elemMU = document.getElementById('mangaURL');
         elemMU.addEventListener("keypress", function(event) {
@@ -453,6 +497,8 @@
             var favLangs = ['ru', 'orig'];
             var favLangTitles = ['Русское', 'Оригинальное'];
 
+            var proxyTypes = ['', 'http', 'https', 'socks5'];
+
             $('#favTitleOpt').html('');
 
             $.get("/loadConfig", function(data) {
@@ -464,6 +510,25 @@
                     } else {
                         $('#favTitleOpt').append('<option value="' + favLangs[x] + '">' + favLangTitles[x] + '</option>');
                     }
+                }
+
+                for (x = 0; x < proxyTypes.length; x++) {
+                    if (data.proxy.type == proxyTypes[x]) {
+                        $('#optProxyType').append('<option value="' + proxyTypes[x] + '" selected>' + proxyTypes[x].toUpperCase() + '</option>');
+                    } else {
+                        $('#optProxyType').append('<option value="' + proxyTypes[x] + '">' + proxyTypes[x].toUpperCase() + '</option>');
+                    }
+                }
+
+                $('#optProxyAddr').val(data.proxy.addr);
+                $('#optProxyPort').val(data.proxy.port);
+
+                if (data.proxy.use.mangalib) {
+                    $('#optProxyUseML').prop("checked", true);
+                }
+
+                if (data.proxy.use.readmanga) {
+                    $('#optProxyUseRM').prop("checked", true);
                 }
 
                 $('#optRMChPause').val(data.readmanga.timeout_chapter / 1000);
@@ -480,13 +545,29 @@
             var optMLChPause = $('#optMLChPause').val();
             var optMLFilePause = $('#optMLFilePause').val();
 
+            var optProxyUseRM = 0;
+            var optProxyUseML = 0;
+
+            if ($('#optProxyUseRM').is(":checked")) {
+                optProxyUseRM = 1;
+            }
+
+            if ($('#optProxyUseML').is(":checked")) {
+                optProxyUseML = 1;
+            }
+
             $.get("/saveConfig", {
                 "savepath": $('#optSavePath').val(),
                 "fav_title": $('#favTitleOpt').val(),
                 "readmanga_timeout_chapter": optRMChPause.replace(',', '.') * 1000,
                 "readmanga_timeout_image": optRMFilePause.replace(',', '.') * 1000,
                 "mangalib_timeout_chapter": optMLChPause.replace(',', '.') * 1000,
-                "mangalib_timeout_image": optMLFilePause.replace(',', '.') * 1000
+                "mangalib_timeout_image": optMLFilePause.replace(',', '.') * 1000,
+                "proxy_type": $('#optProxyType').val(),
+                "proxy_addr": $('#optProxyAddr').val(),
+                "proxy_port": $('#optProxyPort').val(),
+                "proxy_use_rm": optProxyUseRM,
+                "proxy_use_ml": optProxyUseML
             }, function(data) {
                 $('#optionsModal').modal('hide');
             });
@@ -702,6 +783,18 @@
 
             $('.opt-data').attr('disabled', false);
         }
+
+        $('#themeSwitch').on('click', function() {
+            if ($('#root').attr('data-bs-theme') == "dark") {
+                $('#root').attr('data-bs-theme', 'light');
+                $('#themeSwitchCh').prop('checked', false);
+                localStorage.setItem("mangaGrabberTheme", "light");
+            } else {
+                $('#root').attr('data-bs-theme', 'dark');
+                $('#themeSwitchCh').prop('checked', true);
+                localStorage.setItem("mangaGrabberTheme", "dark");
+            }
+        });
     </script>
 </body>
 </html>

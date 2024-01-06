@@ -36,7 +36,7 @@ func main() {
 	r := mux.NewRouter()
 	m := melody.New()
 
-	r.HandleFunc("/getAppVer", tools.GetAppVer)
+	r.HandleFunc("/checkUpdate", tools.CheckUpdate)
 	r.HandleFunc("/checkAuth", tools.CheckAuth)
 
 	r.HandleFunc("/saveConfig", config.SaveConfig)

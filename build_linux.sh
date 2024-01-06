@@ -2,6 +2,8 @@
 
 dt=$(date '+%Y%m%d%H%M');
 
+echo $dt
+
 env GOOS=linux
 env GOARCH=amd64
 
