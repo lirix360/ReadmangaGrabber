@@ -17,7 +17,7 @@ import (
 	"github.com/aki237/nscjar"
 	"github.com/goware/urlx"
 	"github.com/headzoo/surf"
-	"github.com/mholt/archiver"
+	"github.com/mholt/archiver/v3"
 
 	"github.com/lirix360/ReadmangaGrabber/config"
 	"github.com/lirix360/ReadmangaGrabber/data"

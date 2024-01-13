@@ -3,6 +3,7 @@ package favs
 import (
 	"encoding/json"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/goware/urlx"
@@ -119,8 +120,7 @@ func SaveFav(w http.ResponseWriter, r *http.Request) {
 
 	favData := FavData{}
 
-	switch host {
-	case "mangalib.me":
+	if slices.Contains(config.Cfg.CurrentURLs.MangaLib, host) {
 		mangaInfo, err := mangalib.GetMangaInfo(mangaURL)
 		if err != nil {
 			logger.Log.Error("Ошибка при получении информации о манге:", err)
@@ -137,7 +137,7 @@ func SaveFav(w http.ResponseWriter, r *http.Request) {
 		} else {
 			favData.Name = mangaInfo.TitleOrig
 		}
-	case "readmanga.io", "readmanga.live", "mintmanga.live", "selfmanga.live":
+	} else if slices.Contains(config.Cfg.CurrentURLs.ReadManga, host) {
 		mangaInfo, err := readmanga.GetMangaInfo(mangaURL)
 		if err != nil {
 			logger.Log.Error("Ошибка при получении информации о манге:", err)
@@ -154,7 +154,7 @@ func SaveFav(w http.ResponseWriter, r *http.Request) {
 		} else {
 			favData.Name = mangaInfo.TitleOrig
 		}
-	default:
+	} else {
 		tools.SendError("Указанный вами адрес не поддерживается.", w)
 		return
 	}
