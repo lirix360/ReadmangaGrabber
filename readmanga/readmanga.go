@@ -2,8 +2,10 @@ package readmanga
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"io"
+	"math/rand"
 	"os"
 	"path"
 	"regexp"
@@ -22,11 +24,16 @@ import (
 	"github.com/lirix360/ReadmangaGrabber/tools"
 )
 
+type ServersList []struct {
+	Path string `json:"path"`
+	Res  bool   `json:"res"`
+}
+
 func GetMangaInfo(mangaURL string) (data.MangaInfo, error) {
 	var err error
 	var mangaInfo data.MangaInfo
 
-	pageBody, err := tools.GetPage(mangaURL)
+	pageBody, err := tools.GetPageCF(mangaURL)
 	if err != nil {
 		return mangaInfo, err
 	}
@@ -238,7 +245,7 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 		ptOpt = "&tran=" + downData.PrefTrans
 	}
 
-	page, err := tools.GetPage(chapterURL + "?mtr=1" + ptOpt)
+	page, err := tools.GetPageCF(chapterURL + "?mtr=1" + ptOpt)
 	if err != nil {
 		logger.Log.Error("Ошибка при получении страниц:", err)
 		data.WSChan <- data.WSData{
@@ -273,32 +280,20 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 		return nil, errors.New("noauth")
 	}
 
-	r := regexp.MustCompile(`rm_h\.initReader\(\s\[(.+)\],\s0,\s(false|true).+\);`)
-	rNew := regexp.MustCompile(`rm_h\.readerInit\(\s\d,\[(.+)\],\s(false|true).+\);`) // MM
+	r := regexp.MustCompile(`rm_h\.readerDoInit\(\[\[(.+)\]\],\s(false|true),\s(\[.+\]).+\);`)
+
+	srvList := ServersList{}
 
 	chList := r.FindStringSubmatch(string(pageBody))
 
-	if len(chList) > 0 && chList[1] != "" {
-		imageParts := strings.Split(strings.Trim(chList[1], "[]"), "],[")
+	json.Unmarshal([]byte(chList[3]), &srvList)
 
-		for i := 0; i < len(imageParts); i++ {
-			tmpParts := strings.Split(imageParts[i], ",")
+	imageParts := strings.Split(strings.Trim(chList[1], "[]"), "],[")
 
-			imageLinks = append(imageLinks, strings.Trim(tmpParts[0], "\"'")+strings.Trim(tmpParts[2], "\"'"))
-		}
-	} else {
-		// MM hack
-		chList = rNew.FindStringSubmatch(string(pageBody))
+	for i := 0; i < len(imageParts); i++ {
+		tmpParts := strings.Split(imageParts[i], ",")
 
-		if len(chList) > 0 && chList[1] != "" {
-			imageParts := strings.Split(strings.Trim(chList[1], "[]"), "],[")
-
-			for i := 0; i < len(imageParts); i++ {
-				tmpParts := strings.Split(imageParts[i], ",")
-
-				imageLinks = append(imageLinks, strings.Trim(tmpParts[0], "\"'")+strings.Trim(tmpParts[2], "\"'"))
-			}
-		}
+		imageLinks = append(imageLinks, strings.Trim(tmpParts[0], "\"'")+strings.Trim(tmpParts[2], "\"'"))
 	}
 
 	chapterPath := path.Join(config.Cfg.Savepath, downData.SavePath, curChapter.Path)
@@ -310,45 +305,19 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 	var savedFiles []string
 
 	for _, imgURL := range imageLinks {
-		client := grab.NewClient()
-		client.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0"
-
-		url, _ := urlx.Parse(imgURL)
-		host, _, _ := urlx.SplitHostPort(url)
-
-		if host == "one-way.work" {
-			imgURL = strings.Split(imgURL, "?")[0]
-		}
-
-		req, err := grab.NewRequest(chapterPath, imgURL)
+		fileName, err := DlImage(imgURL, chapterPath, srvList, 0)
 		if err != nil {
-			logger.Log.Error("Ошибка при скачивании страницы:", err)
 			data.WSChan <- data.WSData{
 				Cmd: "updateLog",
 				Payload: map[string]interface{}{
 					"type": "err",
-					"text": "-- Ошибка при скачивании страницы:" + err.Error(),
+					"text": "-- Ошибка при скачивании страницы (" + imgURL + "):" + err.Error(),
 				},
 			}
 			continue
 		}
 
-		// req.HTTPRequest.Header.Set("Referer", refURL.Scheme+"://"+refURL.Host+"/")
-
-		resp := client.Do(req)
-		if resp.Err() != nil {
-			logger.Log.Error("Ошибка при скачивании страницы:", resp.Err())
-			data.WSChan <- data.WSData{
-				Cmd: "updateLog",
-				Payload: map[string]interface{}{
-					"type": "err",
-					"text": "-- Ошибка при скачивании страницы:" + resp.Err().Error(),
-				},
-			}
-			continue
-		}
-
-		savedFiles = append(savedFiles, resp.Filename)
+		savedFiles = append(savedFiles, fileName)
 
 		time.Sleep(time.Duration(config.Cfg.Readmanga.TimeoutImage) * time.Millisecond)
 	}
@@ -385,4 +354,79 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 	}
 
 	return savedFiles, nil
+}
+
+func DlImage(imgURL, chapterPath string, srvList ServersList, retry int) (string, error) {
+	maxRetry := 5
+
+	if retry > 0 {
+		logger.Log.Warn("Повторная попытка:", retry)
+	}
+
+	client := grab.NewClient()
+	client.UserAgent = config.Cfg.UserAgent
+
+	url, _ := urlx.Parse(imgURL)
+	host, _, _ := urlx.SplitHostPort(url)
+
+	if host == "one-way.work" {
+		imgURL = strings.Split(imgURL, "?")[0]
+	}
+
+	req, err := grab.NewRequest(chapterPath, imgURL)
+	if err != nil {
+		logger.Log.Error("Ошибка при скачивании страницы:", err)
+		if retry == maxRetry {
+			return "", err
+		} else {
+			time.Sleep(time.Duration(config.Cfg.Readmanga.TimeoutImage) * time.Millisecond)
+			return DlImage(imgURL, chapterPath, srvList, retry+1)
+		}
+	}
+
+	// req.HTTPRequest.Header.Set("Referer", refURL.Scheme+"://"+refURL.Host+"/")
+
+	resp := client.Do(req)
+	if resp.Err() != nil {
+		if resp.HTTPResponse != nil && resp.HTTPResponse.StatusCode == 404 {
+			logger.Log.Error("Ошибка при скачивании страницы:", resp.Err())
+			if retry == maxRetry {
+				return "", err
+			} else {
+				newImgUrl := GetServer(imgURL, srvList)
+				time.Sleep(time.Duration(config.Cfg.Readmanga.TimeoutImage) * time.Millisecond)
+				return DlImage(newImgUrl, chapterPath, srvList, retry+1)
+			}
+		} else {
+			logger.Log.Error("Ошибка при скачивании страницы:", resp.Err())
+			if retry == maxRetry {
+				return "", err
+			} else {
+				time.Sleep(time.Duration(config.Cfg.Readmanga.TimeoutImage) * time.Millisecond)
+				return DlImage(imgURL, chapterPath, srvList, retry+1)
+			}
+		}
+	}
+
+	return resp.Filename, nil
+}
+
+func GetServer(imgURL string, srvList ServersList) string {
+	servers := []string{}
+
+	srcUrl, _ := urlx.Parse(imgURL)
+
+	for _, s := range srvList {
+		newUrl, _ := urlx.Parse(s.Path)
+
+		if newUrl.Host != srcUrl.Host {
+			servers = append(servers, newUrl.Host)
+		}
+	}
+
+	rnd := rand.Intn(len(servers) - 1)
+
+	srcUrl.Host = servers[rnd]
+
+	return srcUrl.String()
 }

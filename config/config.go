@@ -13,10 +13,11 @@ import (
 )
 
 type GrabberConfig struct {
-	Savepath string `json:"savepath"`
-	FavTitle string `json:"fav_title"`
-	ShowGUI  bool   `json:"show_gui"`
-	Server   struct {
+	Savepath  string `json:"savepath"`
+	FavTitle  string `json:"fav_title"`
+	ShowGUI   bool   `json:"show_gui"`
+	UserAgent string
+	Server    struct {
 		Addr string `json:"addr"`
 		Port string `json:"port"`
 	} `json:"server"`
@@ -78,6 +79,8 @@ func init() {
 	if len(Cfg.CurrentURLs.MangaLib) == 0 || len(Cfg.CurrentURLs.ReadManga) == 0 {
 		logger.Log.Fatal("Ошибка при получении списков текущих URL:", err)
 	}
+
+	Cfg.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
 
 func createConfig(filePath string) {

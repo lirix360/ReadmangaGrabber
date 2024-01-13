@@ -11,6 +11,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -123,59 +124,6 @@ func ReverseList(chaptersList []data.ChaptersList) []data.ChaptersList {
 	return newChaptersList
 }
 
-func GetPage(pageURL string) (io.ReadCloser, error) {
-	url, _ := urlx.Parse(pageURL)
-	host, _, _ := urlx.SplitHostPort(url)
-
-	cookieFile := host + ".txt"
-
-	client := &http.Client{}
-
-	if config.Cfg.Proxy.Use.Readmanga {
-		proxyUrl, err := url.Parse(config.Cfg.Proxy.Type + "://" + config.Cfg.Proxy.Addr + ":" + config.Cfg.Proxy.Port)
-		logger.Log.Info("Proxy:", proxyUrl.String())
-		if err != nil {
-			return nil, err
-		}
-
-		client.Transport = &http.Transport{Proxy: http.ProxyURL(proxyUrl)}
-	}
-
-	req, err := http.NewRequest("GET", pageURL, nil)
-	if err != nil {
-		logger.Log.Error("Ошибка при инициализации запроса:", err)
-		return nil, err
-	}
-
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0")
-
-	if IsFileExist(cookieFile) {
-		f, err := os.Open(cookieFile)
-		if err != nil {
-			return nil, err
-		}
-
-		jar := nscjar.Parser{}
-
-		cookies, err := jar.Unmarshal(f)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, cookie := range cookies {
-			req.AddCookie(cookie)
-		}
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		logger.Log.Error("Ошибка при выполнении запроса:", err)
-		return nil, err
-	}
-
-	return resp.Body, nil
-}
-
 func GetPageCF(pageURL string) (io.ReadCloser, error) {
 	var body bytes.Buffer
 	bow := surf.NewBrowser()
@@ -185,9 +133,17 @@ func GetPageCF(pageURL string) (io.ReadCloser, error) {
 
 	cookieFile := host + ".txt"
 
-	if config.Cfg.Proxy.Use.Mangalib {
+	useProxy := false
+
+	if slices.Contains(config.Cfg.CurrentURLs.MangaLib, host) {
+		useProxy = config.Cfg.Proxy.Use.Mangalib
+	} else if slices.Contains(config.Cfg.CurrentURLs.ReadManga, host) {
+		useProxy = config.Cfg.Proxy.Use.Readmanga
+	}
+
+	if useProxy {
 		proxyUrl, err := url.Parse(config.Cfg.Proxy.Type + "://" + config.Cfg.Proxy.Addr + ":" + config.Cfg.Proxy.Port)
-		logger.Log.Info("Proxy:", proxyUrl.String())
+		logger.Log.Info("With Proxy:", proxyUrl.String())
 		if err != nil {
 			return nil, err
 		}
