@@ -24,6 +24,7 @@ type DownloadOpts struct {
 	Type      string
 	Chapters  string
 	MangaURL  string
+	Mtr       bool
 	PDFch     string
 	PDFvol    string
 	CBZ       string

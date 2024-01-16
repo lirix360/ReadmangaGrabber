@@ -127,6 +127,7 @@ func ReverseList(chaptersList []data.ChaptersList) []data.ChaptersList {
 func GetPageCF(pageURL string) (io.ReadCloser, error) {
 	var body bytes.Buffer
 	bow := surf.NewBrowser()
+	bow.SetUserAgent(config.Cfg.UserAgent)
 
 	url, _ := urlx.Parse(pageURL)
 	host, _, _ := urlx.SplitHostPort(url)

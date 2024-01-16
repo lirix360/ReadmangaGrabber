@@ -18,6 +18,7 @@ import (
 
 func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 	var err error
+	var isMtr bool
 	var rawChaptersList []data.ChaptersList
 	chaptersList := make(map[string][]data.ChaptersList)
 	var transList []data.RMTranslators
@@ -41,7 +42,7 @@ func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 			chaptersList[volNum] = append(chaptersList[volNum], ch)
 		}
 	} else if slices.Contains(config.Cfg.CurrentURLs.ReadManga, host) {
-		rawChaptersList, transList, err = readmanga.GetChaptersList(mangaURL)
+		rawChaptersList, transList, isMtr, err = readmanga.GetChaptersList(mangaURL)
 		if err != nil {
 			logger.Log.Error("Ошибка при получении списка глав:", err)
 			tools.SendError("При получении списка глав произошла ошибка. Подробности в лог-файле.", w)
@@ -63,6 +64,7 @@ func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 
 	if len(chaptersList) > 0 {
 		resp["status"] = "success"
+		resp["is_mtr"] = isMtr
 		resp["payload"] = chaptersList
 		resp["translators"] = transList
 	} else {
@@ -77,7 +79,14 @@ func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 }
 
 func DownloadManga(w http.ResponseWriter, r *http.Request) {
+	isMtr := false
+
+	if r.FormValue("isMtr") == "true" {
+		isMtr = true
+	}
+
 	downloadOpts := data.DownloadOpts{
+		Mtr:       isMtr,
 		Type:      r.FormValue("downloadType"),
 		Chapters:  r.FormValue("selectedChapters"),
 		PDFch:     r.FormValue("optPDFch"),

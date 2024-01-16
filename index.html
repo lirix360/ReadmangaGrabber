@@ -303,6 +303,7 @@
 
     <script>
         var clicked = false;
+        var isMtr = false;
 
         $(function() {
             CheckUpdate();
@@ -660,6 +661,7 @@
                 switch (data.status) {
                     case 'success':
                         var x = 1;
+                        isMtr = data.is_mtr;
 
                         $.each(data.payload, function(k, item) {
                             var volHtml = "<div class=\"w-100\" style=\"margin-bottom: 15px !important;\"><div class=\"form-check form-switch\"><input class=\"form-check-input single-volume\" type=\"checkbox\" id=\"tom_" + k + "\" onchange=\"checkVolCh('" + k + "');\"><label class=\"form-check-label\" for=\"tom_" + k + "\"><b>Том " + k + "</b></label></div></div>";
@@ -746,6 +748,7 @@
             $.get("/downloadManga", {
                 "downloadType": type,
                 "mangaURL": $('#mangaURL').val(),
+                "isMtr": isMtr,
                 "optPDFch": optPDFch,
                 "optPDFvol": optPDFvol,
                 "optCBZ": optCBZ,
