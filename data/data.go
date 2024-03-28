@@ -27,6 +27,7 @@ type DownloadOpts struct {
 	Mtr       bool
 	PDFch     string
 	PDFvol    string
+	PDFall    string
 	CBZ       string
 	Del       string
 	SavePath  string

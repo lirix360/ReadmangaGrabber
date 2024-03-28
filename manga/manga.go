@@ -91,6 +91,7 @@ func DownloadManga(w http.ResponseWriter, r *http.Request) {
 		Chapters:  r.FormValue("selectedChapters"),
 		PDFch:     r.FormValue("optPDFch"),
 		PDFvol:    r.FormValue("optPDFvol"),
+		PDFall:    r.FormValue("optPDFall"),
 		CBZ:       r.FormValue("optCBZ"),
 		Del:       r.FormValue("optDEL"),
 		PrefTrans: r.FormValue("optPrefTrans"),
