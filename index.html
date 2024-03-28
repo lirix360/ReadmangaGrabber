@@ -84,6 +84,10 @@
                                 <input class="form-check-input opt-data" type="checkbox" id="optPDFvol" onchange="checkPDFType();">
                                 <label class="form-check-label" for="optPDFvol">по томам</label>
                             </div>
+                            <div class="form-check form-check-inline form-switch" style="margin-right: 2px !important;">
+                                <input class="form-check-input opt-data" type="checkbox" id="optPDFall" onchange="checkPDFType();">
+                                <label class="form-check-label" for="optPDFall">одним файлом</label>
+                            </div>
                             &nbsp;|&nbsp;
                             <div class="form-check form-check-inline form-switch" style="margin-right: 2px !important;">
                                 <input class="form-check-input opt-data" type="checkbox" id="optCBZ" onchange="checkDeleteOption();">
@@ -575,22 +579,32 @@
         }
 
         function checkPDFType() {
-            if ($('#optPDFch').is(':checked') && !$('#optPDFvol').is(':checked')) {
+            var isOptPDFchChecked = $('#optPDFch').is(':checked');
+            var isOptPDFvolChecked = $('#optPDFvol').is(':checked');
+            var isOptPDFallChecked = $('#optPDFall').is(':checked');
+
+            if (isOptPDFallChecked) {
+                $('#optPDFch').prop("disabled", true);
+                $('#optPDFvol').prop("disabled", true);
+            } else if (isOptPDFchChecked && !isOptPDFvolChecked) {
                 $('#optPDFch').prop("disabled", false);
                 $('#optPDFvol').prop("disabled", true);
-            } else if (!$('#optPDFch').is(':checked') && $('#optPDFvol').is(':checked')) {
+                $('#optPDFall').prop("disabled", true);
+            } else if (!isOptPDFchChecked && isOptPDFvolChecked) {
                 $('#optPDFch').prop("disabled", true);
                 $('#optPDFvol').prop("disabled", false);
+                $('#optPDFall').prop("disabled", true);
             } else {
                 $('#optPDFch').prop("disabled", false);
                 $('#optPDFvol').prop("disabled", false);
+                $('#optPDFall').prop("disabled", false);
             }
 
             checkDeleteOption();
         }
 
         function checkDeleteOption() {
-            if ($('#optPDFch').is(':checked') || $('#optPDFvol').is(':checked') || $('#optCBZ').is(':checked')) {
+            if ($('#optPDFch').is(':checked') || $('#optPDFvol').is(':checked') || $('#optCBZ').is(':checked') || $('#optPDFall').is(':checked')) {
                 $('#optDEL').prop("disabled", false);
             } else {
                 $('#optDEL').prop("disabled", true);
@@ -730,8 +744,9 @@
 
             var optPDFch = $('#optPDFch').is(':checked') ? 1 : 0;
             var optPDFvol = $('#optPDFvol').is(':checked') ? 1 : 0;
+            var optPDFall = $('#optPDFall').is(':checked') ? 1 : 0;
             var optCBZ = $('#optCBZ').is(':checked') ? 1 : 0;
-            var optDEL = ($('#optPDFch').is(':checked') || $('#optPDFvol').is(':checked') || $('#optCBZ').is(':checked')) && $('#optDEL').is(':checked') ? 1 : 0;
+            var optDEL = ($('#optPDFch').is(':checked') || $('#optPDFvol').is(':checked') || $('#optPDFall').is(':checked') || $('#optCBZ').is(':checked')) && $('#optDEL').is(':checked') ? 1 : 0;
 
             var optPrefTrans = $('#transList').val();
 
@@ -751,6 +766,7 @@
                 "isMtr": isMtr,
                 "optPDFch": optPDFch,
                 "optPDFvol": optPDFvol,
+                "optPDFall": optPDFall,
                 "optCBZ": optCBZ,
                 "optDEL": optDEL,
                 "optPrefTrans": optPrefTrans,
