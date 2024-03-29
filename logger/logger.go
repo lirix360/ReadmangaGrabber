@@ -1,29 +1,18 @@
 package logger
 
 import (
-	"log"
+	"github.com/charmbracelet/log"
 	"os"
-
-	"github.com/kpango/glg"
+	"time"
 )
 
-var Log *glg.Glg
+var Log *log.Logger
 
 func init() {
-	var err error
-
-	if _, err = os.Stat("grabber_log.log"); err == nil {
-		err = os.Remove("grabber_log.log")
-		if err != nil {
-			log.Fatal("Ошибка при удалении старого лог-файла:", err)
-		}
-	}
-
-	logFile := glg.FileWriter("grabber_log.log", 0644)
-
-	Log = glg.Get().
-		SetMode(glg.BOTH).
-		AddLevelWriter(glg.INFO, logFile).
-		AddLevelWriter(glg.ERR, logFile).
-		AddLevelWriter(glg.FATAL, logFile)
+	Log = log.NewWithOptions(os.Stderr, log.Options{
+		ReportTimestamp: true,
+		TimeFormat:      time.TimeOnly,
+		Prefix:          "🍪",
+		ReportCaller:    true,
+	})
 }
