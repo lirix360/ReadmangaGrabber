@@ -13,5 +13,6 @@ func init() {
 		ReportTimestamp: true,
 		TimeFormat:      time.TimeOnly,
 		Prefix:          "🍪",
+		ReportCaller:    true,
 	})
 }
