@@ -224,7 +224,7 @@ func DownloadManga(downData data.DownloadOpts) error {
 			},
 		}
 
-		pdf.CreateMangaPfd(chapterPath, savedFilesByVol, downData.Del)
+		pdf.CreateMangaPdf(chapterPath, savedFilesByVol, downData.Del)
 	}
 
 	mangaID := tools.GetMD5(downData.MangaURL)

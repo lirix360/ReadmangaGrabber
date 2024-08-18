@@ -22,7 +22,7 @@ import (
 	"github.com/phpdave11/gofpdf"
 )
 
-func CreateMangaPfd(savePath string, savedFiles map[string][]string, delFlag string) {
+func CreateMangaPdf(savePath string, savedFiles map[string][]string, delFlag string) {
 	var allPages []string
 
 	for _, files := range savedFiles {
