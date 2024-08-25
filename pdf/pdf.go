@@ -32,15 +32,12 @@ func CreateMangaPdf(savePath string, savedFiles map[string][]string, delFlag str
 	CreatePDF(savePath, allPages)
 
 	if delFlag == "1" {
-		for vol, _ := range savedFiles {
-			savePath := path.Join(savePath, vol)
-			err := os.RemoveAll(savePath)
-			if err != nil {
-				slog.Error(
-					"Ошибка при удалении файлов",
-					slog.String("Message", err.Error()),
-				)
-			}
+		err := os.RemoveAll(savePath)
+		if err != nil {
+			slog.Error(
+				"Ошибка при удалении файлов",
+				slog.String("Message", err.Error()),
+			)
 		}
 	}
 }

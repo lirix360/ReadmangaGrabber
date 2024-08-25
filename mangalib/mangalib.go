@@ -360,7 +360,7 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 		pdf.CreatePDF(chapterPath, savedFiles)
 	}
 
-	if downData.PDFvol != "1" && downData.Del == "1" {
+	if downData.PDFvol != "1" && downData.PDFall != "1" && downData.Del == "1" {
 		err := os.RemoveAll(chapterPath)
 		if err != nil {
 			slog.Error(
