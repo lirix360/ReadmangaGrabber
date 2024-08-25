@@ -36,7 +36,10 @@ func CreateMangaPdf(savePath string, savedFiles map[string][]string, delFlag str
 			savePath := path.Join(savePath, vol)
 			err := os.RemoveAll(savePath)
 			if err != nil {
-				logger.Log.Error("Ошибка при удалении файлов:", err)
+				slog.Error(
+					"Ошибка при удалении файлов",
+					slog.String("Message", err.Error()),
+				)
 			}
 		}
 	}
