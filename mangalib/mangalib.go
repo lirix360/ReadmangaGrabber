@@ -181,6 +181,8 @@ func DownloadManga(downData data.DownloadOpts) error {
 		}
 	}
 
+	chapterPath := path.Join(config.Cfg.Savepath, downData.SavePath)
+
 	if downData.PDFvol == "1" {
 		data.WSChan <- data.WSData{
 			Cmd: "updateLog",
@@ -190,9 +192,19 @@ func DownloadManga(downData data.DownloadOpts) error {
 			},
 		}
 
-		chapterPath := path.Join(config.Cfg.Savepath, downData.SavePath)
-
 		pdf.CreateVolPDF(chapterPath, savedFilesByVol, downData.Del)
+	}
+
+	if downData.PDFall == "1" {
+		data.WSChan <- data.WSData{
+			Cmd: "updateLog",
+			Payload: map[string]interface{}{
+				"type": "std",
+				"text": "Создаю PDF для манги",
+			},
+		}
+
+		pdf.CreateMangaPdf(chapterPath, savedFilesByVol, downData.Del)
 	}
 
 	mangaID := tools.GetMD5(downData.MangaURL)

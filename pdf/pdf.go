@@ -22,6 +22,26 @@ import (
 	"github.com/phpdave11/gofpdf"
 )
 
+func CreateMangaPdf(savePath string, savedFiles map[string][]string, delFlag string) {
+	var allPages []string
+
+	for _, files := range savedFiles {
+		allPages = append(allPages, files...)
+	}
+
+	CreatePDF(savePath, allPages)
+
+	if delFlag == "1" {
+		for vol, _ := range savedFiles {
+			savePath := path.Join(savePath, vol)
+			err := os.RemoveAll(savePath)
+			if err != nil {
+				logger.Log.Error("Ошибка при удалении файлов:", err)
+			}
+		}
+	}
+}
+
 func CreateVolPDF(chapterPath string, savedFiles map[string][]string, delFlag string) {
 	for vol, files := range savedFiles {
 		savePath := path.Join(chapterPath, vol)
