@@ -1,10 +1,12 @@
 package db
 
 import (
+	"log/slog"
+	"os"
+
 	bolt "go.etcd.io/bbolt"
 
 	"github.com/lirix360/ReadmangaGrabber/config"
-	"github.com/lirix360/ReadmangaGrabber/logger"
 	"github.com/lirix360/ReadmangaGrabber/tools"
 )
 
@@ -19,7 +21,11 @@ func init() {
 
 	DBconn, err = bolt.Open(dbFileName, 0664, nil)
 	if err != nil {
-		logger.Log.Fatal("Ошибка при открытии файла БД:", err)
+		slog.Error(
+			"Ошибка при открытии файла БД",
+			slog.String("Message", err.Error()),
+		)
+		os.Exit(1)
 	}
 
 	err = DBconn.Update(func(tx *bolt.Tx) error {
@@ -27,7 +33,11 @@ func init() {
 		return err
 	})
 	if err != nil {
-		logger.Log.Fatal("Ошибка при создании бакета (AppSettings) в БД:", err)
+		slog.Error(
+			"Ошибка при создании бакета (AppSettings) в БД",
+			slog.String("Message", err.Error()),
+		)
+		os.Exit(1)
 	}
 
 	err = DBconn.Update(func(tx *bolt.Tx) error {
@@ -35,7 +45,11 @@ func init() {
 		return err
 	})
 	if err != nil {
-		logger.Log.Fatal("Ошибка при создании бакета (MangaFavs) в БД:", err)
+		slog.Error(
+			"Ошибка при создании бакета (MangaFavs) в БД",
+			slog.String("Message", err.Error()),
+		)
+		os.Exit(1)
 	}
 
 	err = DBconn.Update(func(tx *bolt.Tx) error {
@@ -43,7 +57,11 @@ func init() {
 		return err
 	})
 	if err != nil {
-		logger.Log.Fatal("Ошибка при создании бакета (History) в БД:", err)
+		slog.Error(
+			"Ошибка при создании бакета (History) в БД",
+			slog.String("Message", err.Error()),
+		)
+		os.Exit(1)
 	}
 
 	if !checkDBFile {
@@ -53,7 +71,11 @@ func init() {
 			return err
 		})
 		if err != nil {
-			logger.Log.Fatal("Ошибка при создании стартовой БД:", err)
+			slog.Error(
+				"Ошибка при создании стартовой БД",
+				slog.String("Message", err.Error()),
+			)
+			os.Exit(1)
 		}
 	}
 }

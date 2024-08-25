@@ -3,6 +3,7 @@ package mangalib
 import (
 	"encoding/json"
 	"io"
+	"log/slog"
 	"os"
 	"path"
 	"regexp"
@@ -16,7 +17,6 @@ import (
 	"github.com/lirix360/ReadmangaGrabber/config"
 	"github.com/lirix360/ReadmangaGrabber/data"
 	"github.com/lirix360/ReadmangaGrabber/history"
-	"github.com/lirix360/ReadmangaGrabber/logger"
 	"github.com/lirix360/ReadmangaGrabber/pdf"
 	"github.com/lirix360/ReadmangaGrabber/tools"
 )
@@ -121,7 +121,10 @@ func DownloadManga(downData data.DownloadOpts) error {
 	case "all":
 		chaptersList, err = GetChaptersList(downData.MangaURL)
 		if err != nil {
-			logger.Log.Error("Ошибка при получении списка глав:", err)
+			slog.Error(
+				"Ошибка при получении списка глав",
+				slog.String("Message", err.Error()),
+			)
 			return err
 		}
 		time.Sleep(1 * time.Second)
@@ -240,13 +243,19 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 
 	err = json.Unmarshal([]byte(rawInfo), &info)
 	if err != nil {
-		logger.Log.Error("Ошибка при распаковке данных (Info):", err)
+		slog.Error(
+			"Ошибка при распаковке данных (Info)",
+			slog.String("Message", err.Error()),
+		)
 		return nil, err
 	}
 
 	err = json.Unmarshal([]byte(rawPages), &pages)
 	if err != nil {
-		logger.Log.Error("Ошибка при распаковке данных (Pages):", err)
+		slog.Error(
+			"Ошибка при распаковке данных (Pages)",
+			slog.String("Message", err.Error()),
+		)
 		return nil, err
 	}
 
@@ -279,14 +288,20 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 			req, err := grab.NewRequest(chapterPath, imgURL)
 			req.HTTPRequest.Header.Set("Referer", chapterURL)
 			if err != nil {
-				logger.Log.Error("Ошибка при создании запроса страницы:", err)
+				slog.Error(
+					"Ошибка при создании запроса страницы",
+					slog.String("Message", err.Error()),
+				)
 				isFail = true
 				continue
 			}
 
 			resp := client.Do(req)
 			if resp.Err() != nil {
-				logger.Log.Error("Ошибка при скачивании страницы:", resp.Err())
+				slog.Error(
+					"Ошибка при скачивании страницы",
+					slog.String("Message", resp.Err().Error()),
+				)
 				isFail = true
 				continue
 			}
@@ -336,7 +351,10 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 	if downData.PDFvol != "1" && downData.Del == "1" {
 		err := os.RemoveAll(chapterPath)
 		if err != nil {
-			logger.Log.Error("Ошибка при удалении файлов:", err)
+			slog.Error(
+				"Ошибка при удалении файлов",
+				slog.String("Message", err.Error()),
+			)
 		}
 	}
 

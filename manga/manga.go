@@ -2,6 +2,7 @@ package manga
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -10,7 +11,6 @@ import (
 
 	"github.com/lirix360/ReadmangaGrabber/config"
 	"github.com/lirix360/ReadmangaGrabber/data"
-	"github.com/lirix360/ReadmangaGrabber/logger"
 	"github.com/lirix360/ReadmangaGrabber/mangalib"
 	"github.com/lirix360/ReadmangaGrabber/readmanga"
 	"github.com/lirix360/ReadmangaGrabber/tools"
@@ -31,7 +31,10 @@ func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 	if slices.Contains(config.Cfg.CurrentURLs.MangaLib, host) {
 		rawChaptersList, err = mangalib.GetChaptersList(mangaURL)
 		if err != nil {
-			logger.Log.Error("Ошибка при получении списка глав:", err)
+			slog.Error(
+				"Ошибка при получении списка глав",
+				slog.String("Message", err.Error()),
+			)
 			tools.SendError("При получении списка глав произошла ошибка. Подробности в лог-файле.", w)
 			return
 		}
@@ -44,7 +47,10 @@ func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 	} else if slices.Contains(config.Cfg.CurrentURLs.ReadManga, host) {
 		rawChaptersList, transList, isMtr, err = readmanga.GetChaptersList(mangaURL)
 		if err != nil {
-			logger.Log.Error("Ошибка при получении списка глав:", err)
+			slog.Error(
+				"Ошибка при получении списка глав",
+				slog.String("Message", err.Error()),
+			)
 			tools.SendError("При получении списка глав произошла ошибка. Подробности в лог-файле.", w)
 			return
 		}
@@ -55,7 +61,10 @@ func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 			chaptersList[volNum] = append(chaptersList[volNum], ch)
 		}
 	} else {
-		logger.Log.Error("Ошибка при получении списка глав:", err)
+		slog.Error(
+			"Ошибка при получении списка глав",
+			slog.String("Message", "Указанный адрес не поддерживается"),
+		)
 		tools.SendError("Указанный вами адрес не поддерживается.", w)
 		return
 	}

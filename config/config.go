@@ -3,13 +3,13 @@ package config
 import (
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 
 	"github.com/lirix360/ReadmangaGrabber/data"
-	"github.com/lirix360/ReadmangaGrabber/logger"
 )
 
 type GrabberConfig struct {
@@ -46,14 +46,20 @@ var Cfg GrabberConfig
 var DBver = "20220605"
 var APPver = ""
 
+var configFilename = "grabber_config.json"
+
 func init() {
-	if _, err := os.Stat("grabber_config.json"); os.IsNotExist(err) {
-		createConfig("grabber_config.json")
+	if _, err := os.Stat(configFilename); os.IsNotExist(err) {
+		createConfig()
 	}
 
-	err := readConfig("grabber_config.json")
+	err := readConfig(configFilename)
 	if err != nil {
-		logger.Log.Fatal("Ошибка при чтении файла конфигурации:", err)
+		slog.Error(
+			"Ошибка при чтении файла конфигурации",
+			slog.String("Message", err.Error()),
+		)
+		os.Exit(1)
 	}
 
 	UpdateCfg()
@@ -77,13 +83,17 @@ func init() {
 	Cfg.CurrentURLs = GetURLs()
 
 	if len(Cfg.CurrentURLs.MangaLib) == 0 || len(Cfg.CurrentURLs.ReadManga) == 0 {
-		logger.Log.Fatal("Ошибка при получении списков текущих URL:", err)
+		slog.Error(
+			"Ошибка при получении списков текущих URL",
+			slog.String("Message", err.Error()),
+		)
+		os.Exit(1)
 	}
 
 	Cfg.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
 
-func createConfig(filePath string) {
+func createConfig() {
 	newCfg := GrabberConfig{}
 
 	newCfg.Savepath = "Manga/"
@@ -96,7 +106,7 @@ func createConfig(filePath string) {
 	newCfg.Mangalib.TimeoutImage = 500
 	newCfg.Mangalib.TimeoutChapter = 1000
 
-	writeConfig("grabber_config.json", newCfg)
+	writeConfig(configFilename, newCfg)
 }
 
 func readConfig(filePath string) error {
@@ -157,7 +167,7 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 		Cfg.Proxy.Use.Mangalib = true
 	}
 
-	writeConfig("grabber_config.json", Cfg)
+	writeConfig(configFilename, Cfg)
 }
 
 func UpdateCfg() {
@@ -167,9 +177,9 @@ func UpdateCfg() {
 		Cfg.Server.Addr = "127.0.0.1"
 		Cfg.Server.Port = "8888"
 
-		writeConfig("grabber_config.json", Cfg)
+		writeConfig(configFilename, Cfg)
 
-		readConfig("grabber_config.json")
+		readConfig(configFilename)
 	}
 }
 
@@ -179,14 +189,20 @@ func GetURLs() data.CurrentURLS {
 
 	resp, err := http.Get("https://raw.githubusercontent.com/lirix360/ReadmangaGrabber/master/lib_urls.json")
 	if err != nil {
-		logger.Log.Error(err)
+		slog.Error(
+			"Ошибка при получении списков URL библиотек",
+			slog.String("Message", err.Error()),
+		)
 		return curURLs
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logger.Log.Error(err)
+		slog.Error(
+			"Ошибка при обработке списков URL библиотек",
+			slog.String("Message", err.Error()),
+		)
 		return curURLs
 	}
 

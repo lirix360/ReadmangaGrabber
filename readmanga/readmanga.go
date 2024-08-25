@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"math/rand"
 	"os"
 	"path"
@@ -19,7 +20,6 @@ import (
 	"github.com/lirix360/ReadmangaGrabber/config"
 	"github.com/lirix360/ReadmangaGrabber/data"
 	"github.com/lirix360/ReadmangaGrabber/history"
-	"github.com/lirix360/ReadmangaGrabber/logger"
 	"github.com/lirix360/ReadmangaGrabber/pdf"
 	"github.com/lirix360/ReadmangaGrabber/tools"
 )
@@ -132,7 +132,10 @@ func DownloadManga(downData data.DownloadOpts) error {
 	case "all":
 		chaptersList, _, _, err = GetChaptersList(downData.MangaURL)
 		if err != nil {
-			logger.Log.Error("Ошибка при получении списка глав:", err)
+			slog.Error(
+				"Ошибка при получении списка глав",
+				slog.String("Message", err.Error()),
+			)
 			return err
 		}
 		time.Sleep(1 * time.Second)
@@ -262,7 +265,10 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 
 	page, err := tools.GetPageCF(chapterURL + mtrOpt + ptOpt)
 	if err != nil {
-		logger.Log.Error("Ошибка при получении страниц:", err)
+		slog.Error(
+			"Ошибка при получении страниц",
+			slog.String("Message", err.Error()),
+		)
 		data.WSChan <- data.WSData{
 			Cmd: "updateLog",
 			Payload: map[string]interface{}{
@@ -275,7 +281,10 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 
 	pageBody, err := io.ReadAll(page)
 	if err != nil {
-		logger.Log.Error("Ошибка при получении страниц:", err)
+		slog.Error(
+			"Ошибка при получении страниц",
+			slog.String("Message", err.Error()),
+		)
 		data.WSChan <- data.WSData{
 			Cmd: "updateLog",
 			Payload: map[string]interface{}{
@@ -364,7 +373,10 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 	if downData.PDFvol != "1" && downData.Del == "1" {
 		err := os.RemoveAll(chapterPath)
 		if err != nil {
-			logger.Log.Error("Ошибка при удалении файлов:", err)
+			slog.Error(
+				"Ошибка при удалении файлов",
+				slog.String("Message", err.Error()),
+			)
 		}
 	}
 
@@ -375,7 +387,10 @@ func DlImage(imgURL, chapterPath string, srvList ServersList, retry int) (string
 	maxRetry := 5
 
 	if retry > 0 {
-		logger.Log.Warn("Повторная попытка:", retry)
+		slog.Warn(
+			"Повторная попытка",
+			slog.Int("Message", retry),
+		)
 	}
 
 	client := grab.NewClient()
@@ -390,7 +405,10 @@ func DlImage(imgURL, chapterPath string, srvList ServersList, retry int) (string
 
 	req, err := grab.NewRequest(chapterPath, imgURL)
 	if err != nil {
-		logger.Log.Error("Ошибка при скачивании страницы:", err)
+		slog.Error(
+			"Ошибка при скачивании страницы",
+			slog.String("Message", err.Error()),
+		)
 		if retry == maxRetry {
 			return "", err
 		} else {
@@ -404,7 +422,10 @@ func DlImage(imgURL, chapterPath string, srvList ServersList, retry int) (string
 	resp := client.Do(req)
 	if resp.Err() != nil {
 		if resp.HTTPResponse != nil && resp.HTTPResponse.StatusCode == 404 {
-			logger.Log.Error("Ошибка при скачивании страницы:", resp.Err())
+			slog.Error(
+				"Ошибка при скачивании страницы",
+				slog.String("Message", resp.Err().Error()),
+			)
 			if retry == maxRetry {
 				return "", err
 			} else {
@@ -413,7 +434,10 @@ func DlImage(imgURL, chapterPath string, srvList ServersList, retry int) (string
 				return DlImage(newImgUrl, chapterPath, srvList, retry+1)
 			}
 		} else {
-			logger.Log.Error("Ошибка при скачивании страницы:", resp.Err())
+			slog.Error(
+				"Ошибка при скачивании страницы",
+				slog.String("Message", resp.Err().Error()),
+			)
 			if retry == maxRetry {
 				return "", err
 			} else {

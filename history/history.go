@@ -2,14 +2,14 @@ package history
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"strings"
 
+	"github.com/goware/urlx"
 	bolt "go.etcd.io/bbolt"
 
-	"github.com/goware/urlx"
 	"github.com/lirix360/ReadmangaGrabber/db"
-	"github.com/lirix360/ReadmangaGrabber/logger"
 	"github.com/lirix360/ReadmangaGrabber/tools"
 )
 
@@ -38,7 +38,10 @@ func LoadHistory(mangaID string) ([]string, error) {
 func LoadHistoryWeb(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		logger.Log.Error("Ошибка при парсинге формы:", err)
+		slog.Error(
+			"Ошибка при парсинге формы",
+			slog.String("Message", err.Error()),
+		)
 		tools.SendError("Ошибка при парсинге формы.", w)
 		return
 	}
@@ -49,7 +52,10 @@ func LoadHistoryWeb(w http.ResponseWriter, r *http.Request) {
 
 	historyData, err := LoadHistory(mangaID)
 	if err != nil {
-		logger.Log.Error("Ошибка при получении истории из БД:", err)
+		slog.Error(
+			"Ошибка при получении истории из БД",
+			slog.String("Message", err.Error()),
+		)
 		tools.SendError("Ошибка при получении истории из БД.", w)
 		return
 	}
@@ -68,7 +74,10 @@ func LoadHistoryWeb(w http.ResponseWriter, r *http.Request) {
 func SaveHistory(mangaID string, chapters []string) error {
 	historyData, err := LoadHistory(mangaID)
 	if err != nil {
-		logger.Log.Error("Ошибка при получении истории из БД:", err)
+		slog.Error(
+			"Ошибка при получении истории из БД",
+			slog.String("Message", err.Error()),
+		)
 		return err
 	}
 
@@ -77,7 +86,10 @@ func SaveHistory(mangaID string, chapters []string) error {
 
 	chaptersJSON, err := json.Marshal(summaryCh)
 	if err != nil {
-		logger.Log.Error("Ошибка при запаковке данных для ДБ:", err)
+		slog.Error(
+			"Ошибка при запаковке данных для БД",
+			slog.String("Message", err.Error()),
+		)
 		return err
 	}
 
@@ -87,7 +99,10 @@ func SaveHistory(mangaID string, chapters []string) error {
 		return err
 	})
 	if err != nil {
-		logger.Log.Error("Ошибка при вставке данных в ДБ:", err)
+		slog.Error(
+			"Ошибка при вставке данных в БД",
+			slog.String("Message", err.Error()),
+		)
 		return err
 	}
 

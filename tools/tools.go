@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"math"
 	"net/http"
 	"os"
@@ -22,32 +23,45 @@ import (
 
 	"github.com/lirix360/ReadmangaGrabber/config"
 	"github.com/lirix360/ReadmangaGrabber/data"
-	"github.com/lirix360/ReadmangaGrabber/logger"
 )
 
 func CheckUpdate(w http.ResponseWriter, r *http.Request) {
 	tmpData := map[string]string{}
 	jsonResp := make(map[string]interface{})
+	body := []byte{}
 
 	hasError := false
 
 	resp, err := http.Get("https://raw.githubusercontent.com/lirix360/ReadmangaGrabber/master/version.json")
 	if err != nil {
-		logger.Log.Error(err)
+		slog.Error(
+			"Ошибка при запросе информации о версии",
+			slog.String("Message", err.Error()),
+		)
 		hasError = true
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		logger.Log.Error(err)
-		hasError = true
+	if !hasError {
+		body, err = io.ReadAll(resp.Body)
+		if err != nil {
+			slog.Error(
+				"Ошибка при получении информации о версии",
+				slog.String("Message", err.Error()),
+			)
+			hasError = true
+		}
 	}
 
-	err = json.Unmarshal(body, &tmpData)
-	if err != nil {
-		logger.Log.Error(err)
-		hasError = true
+	if !hasError {
+		err = json.Unmarshal(body, &tmpData)
+		if err != nil {
+			slog.Error(
+				"Ошибка при обработке информации о версии",
+				slog.String("Message", err.Error()),
+			)
+			hasError = true
+		}
 	}
 
 	if !hasError {
@@ -73,7 +87,10 @@ func CheckUpdate(w http.ResponseWriter, r *http.Request) {
 func CheckAuth(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		logger.Log.Error("Ошибка при парсинге формы:", err)
+		slog.Error(
+			"Ошибка при парсинге формы",
+			slog.String("Message", err.Error()),
+		)
 		SendError("Ошибка при парсинге формы.", w)
 		return
 	}
@@ -144,7 +161,10 @@ func GetPageCF(pageURL string) (io.ReadCloser, error) {
 
 	if useProxy {
 		proxyUrl, err := url.Parse(config.Cfg.Proxy.Type + "://" + config.Cfg.Proxy.Addr + ":" + config.Cfg.Proxy.Port)
-		logger.Log.Info("With Proxy:", proxyUrl.String())
+		slog.Info(
+			"Используется прокси",
+			slog.String("Server", proxyUrl.String()),
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -172,13 +192,19 @@ func GetPageCF(pageURL string) (io.ReadCloser, error) {
 
 	err := bow.Open(pageURL)
 	if err != nil {
-		logger.Log.Error("Ошибка при инициализации запроса:", err)
+		slog.Error(
+			"Ошибка при инициализации запроса",
+			slog.String("Message", err.Error()),
+		)
 		return nil, err
 	}
 
 	_, err = bow.Download(&body)
 	if err != nil {
-		logger.Log.Error("Ошибка при выполнении запроса:", err)
+		slog.Error(
+			"Ошибка при выполнении запроса",
+			slog.String("Message", err.Error()),
+		)
 		return nil, err
 	}
 
@@ -188,7 +214,10 @@ func GetPageCF(pageURL string) (io.ReadCloser, error) {
 func SavePage(body string) {
 	file, err := os.Create("saved.html")
 	if err != nil {
-		logger.Log.Error(err)
+		slog.Error(
+			"Ошибка при сохранении страницы",
+			slog.String("Message", err.Error()),
+		)
 	} else {
 		file.WriteString(body)
 	}
@@ -207,7 +236,10 @@ func CreateCBZ(chapterPath string) error {
 
 	err := z.Archive([]string{chapterPath}, chapterPath+".zip")
 	if err != nil {
-		logger.Log.Error("Ошибка при создании архива ("+chapterPath+".zip):", err)
+		slog.Error(
+			"Ошибка при создании архива ("+chapterPath+".zip)",
+			slog.String("Message", err.Error()),
+		)
 		data.WSChan <- data.WSData{
 			Cmd: "updateLog",
 			Payload: map[string]interface{}{
@@ -221,7 +253,10 @@ func CreateCBZ(chapterPath string) error {
 
 	err = os.Rename(chapterPath+".zip", chapterPath+".cbz")
 	if err != nil {
-		logger.Log.Error("Ошибка при переименовании архива ("+chapterPath+".zip):", err)
+		slog.Error(
+			"Ошибка при переименовании архива ("+chapterPath+".zip)",
+			slog.String("Message", err.Error()),
+		)
 		data.WSChan <- data.WSData{
 			Cmd: "updateLog",
 			Payload: map[string]interface{}{

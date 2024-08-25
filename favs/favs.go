@@ -2,6 +2,7 @@ package favs
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"slices"
 	"strings"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/lirix360/ReadmangaGrabber/config"
 	"github.com/lirix360/ReadmangaGrabber/db"
-	"github.com/lirix360/ReadmangaGrabber/logger"
 	"github.com/lirix360/ReadmangaGrabber/mangalib"
 	"github.com/lirix360/ReadmangaGrabber/readmanga"
 	"github.com/lirix360/ReadmangaGrabber/tools"
@@ -50,7 +50,10 @@ func LoadFavs(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 	if err != nil {
-		logger.Log.Error("Ошибка при получении избранного из БД:", err)
+		slog.Error(
+			"Ошибка при получении избранного из БД",
+			slog.String("Message", err.Error()),
+		)
 		tools.SendError("Ошибка при получении избранного из БД.", w)
 		return
 	}
@@ -71,7 +74,10 @@ func GetFav(w http.ResponseWriter, r *http.Request) {
 
 	err = r.ParseForm()
 	if err != nil {
-		logger.Log.Error("Ошибка при парсинге формы:", err)
+		slog.Error(
+			"Ошибка при парсинге формы",
+			slog.String("Message", err.Error()),
+		)
 		tools.SendError("Ошибка при парсинге формы.", w)
 		return
 	}
@@ -86,7 +92,10 @@ func GetFav(w http.ResponseWriter, r *http.Request) {
 		return err
 	})
 	if err != nil {
-		logger.Log.Error("Ошибка при получении избранного из БД:", err)
+		slog.Error(
+			"Ошибка при получении избранного из БД",
+			slog.String("Message", err.Error()),
+		)
 		tools.SendError("Ошибка при получении избранного из БД.", w)
 		return
 	}
@@ -107,7 +116,10 @@ func SaveFav(w http.ResponseWriter, r *http.Request) {
 
 	err = r.ParseForm()
 	if err != nil {
-		logger.Log.Error("Ошибка при парсинге формы:", err)
+		slog.Error(
+			"Ошибка при парсинге формы",
+			slog.String("Message", err.Error()),
+		)
 		tools.SendError("Ошибка при парсинге формы.", w)
 		return
 	}
@@ -123,7 +135,10 @@ func SaveFav(w http.ResponseWriter, r *http.Request) {
 	if slices.Contains(config.Cfg.CurrentURLs.MangaLib, host) {
 		mangaInfo, err := mangalib.GetMangaInfo(mangaURL)
 		if err != nil {
-			logger.Log.Error("Ошибка при получении информации о манге:", err)
+			slog.Error(
+				"Ошибка при получении информации о манге",
+				slog.String("Message", err.Error()),
+			)
 			tools.SendError("Ошибка при получении информации о манге.", w)
 			return
 		}
@@ -140,7 +155,10 @@ func SaveFav(w http.ResponseWriter, r *http.Request) {
 	} else if slices.Contains(config.Cfg.CurrentURLs.ReadManga, host) {
 		mangaInfo, err := readmanga.GetMangaInfo(mangaURL)
 		if err != nil {
-			logger.Log.Error("Ошибка при получении информации о манге:", err)
+			slog.Error(
+				"Ошибка при получении информации о манге",
+				slog.String("Message", err.Error()),
+			)
 			tools.SendError("Ошибка при получении информации о манге.", w)
 			return
 		}
@@ -161,8 +179,11 @@ func SaveFav(w http.ResponseWriter, r *http.Request) {
 
 	favDataJSON, err := json.Marshal(favData)
 	if err != nil {
-		logger.Log.Error("Ошибка при запаковке данных для ДБ:", err)
-		tools.SendError("Ошибка при запаковке данных для ДБ.", w)
+		slog.Error(
+			"Ошибка при запаковке данных для БД",
+			slog.String("Message", err.Error()),
+		)
+		tools.SendError("Ошибка при запаковке данных для БД.", w)
 		return
 	}
 
@@ -172,8 +193,11 @@ func SaveFav(w http.ResponseWriter, r *http.Request) {
 		return err
 	})
 	if err != nil {
-		logger.Log.Error("Ошибка при вставке данных в ДБ:", err)
-		tools.SendError("Ошибка при вставке данных в ДБ.", w)
+		slog.Error(
+			"Ошибка при вставке данных в БД",
+			slog.String("Message", err.Error()),
+		)
+		tools.SendError("Ошибка при вставке данных в БД.", w)
 		return
 	}
 
@@ -193,7 +217,10 @@ func DeleteFav(w http.ResponseWriter, r *http.Request) {
 
 	err = r.ParseForm()
 	if err != nil {
-		logger.Log.Error("Ошибка при парсинге формы:", err)
+		slog.Error(
+			"Ошибка при парсинге формы",
+			slog.String("Message", err.Error()),
+		)
 		tools.SendError("Ошибка при парсинге формы.", w)
 		return
 	}
@@ -206,7 +233,10 @@ func DeleteFav(w http.ResponseWriter, r *http.Request) {
 		return err
 	})
 	if err != nil {
-		logger.Log.Error("Ошибка при удалении манги из БД:", err)
+		slog.Error(
+			"Ошибка при удалении манги из БД",
+			slog.String("Message", err.Error()),
+		)
 		tools.SendError("Ошибка при удалении манги из БД.", w)
 		return
 	}
