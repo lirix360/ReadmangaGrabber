@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
-	"slices"
 	"strings"
 
 	"github.com/goware/urlx"
@@ -132,7 +131,7 @@ func SaveFav(w http.ResponseWriter, r *http.Request) {
 
 	favData := FavData{}
 
-	if slices.Contains(config.Cfg.CurrentURLs.MangaLib, host) {
+	if tools.CheckSource(config.Cfg.CurrentURLs.MangaLib, host) {
 		mangaInfo, err := mangalib.GetMangaInfo(mangaURL)
 		if err != nil {
 			slog.Error(
@@ -152,7 +151,7 @@ func SaveFav(w http.ResponseWriter, r *http.Request) {
 		} else {
 			favData.Name = mangaInfo.TitleOrig
 		}
-	} else if slices.Contains(config.Cfg.CurrentURLs.ReadManga, host) {
+	} else if tools.CheckSource(config.Cfg.CurrentURLs.ReadManga, host) {
 		mangaInfo, err := readmanga.GetMangaInfo(mangaURL)
 		if err != nil {
 			slog.Error(

@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/goware/urlx"
-	"golang.org/x/exp/slices"
 
 	"github.com/lirix360/ReadmangaGrabber/config"
 	"github.com/lirix360/ReadmangaGrabber/data"
@@ -19,6 +18,7 @@ import (
 func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var isMtr bool
+	var userHash string
 	var rawChaptersList []data.ChaptersList
 	chaptersList := make(map[string][]data.ChaptersList)
 	var transList []data.RMTranslators
@@ -28,7 +28,7 @@ func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 
 	mangaURL := strings.Split(url.String(), "?")[0]
 
-	if slices.Contains(config.Cfg.CurrentURLs.MangaLib, host) {
+	if tools.CheckSource(config.Cfg.CurrentURLs.MangaLib, host) {
 		rawChaptersList, err = mangalib.GetChaptersList(mangaURL)
 		if err != nil {
 			slog.Error(
@@ -44,8 +44,8 @@ func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 			volNum := strings.TrimLeft(parts[0], "v")
 			chaptersList[volNum] = append(chaptersList[volNum], ch)
 		}
-	} else if slices.Contains(config.Cfg.CurrentURLs.ReadManga, host) {
-		rawChaptersList, transList, isMtr, err = readmanga.GetChaptersList(mangaURL)
+	} else if tools.CheckSource(config.Cfg.CurrentURLs.ReadManga, host) {
+		rawChaptersList, transList, isMtr, userHash, err = readmanga.GetChaptersList(mangaURL)
 		if err != nil {
 			slog.Error(
 				"Ошибка при получении списка глав",
@@ -74,6 +74,7 @@ func GetChaptersList(w http.ResponseWriter, r *http.Request) {
 	if len(chaptersList) > 0 {
 		resp["status"] = "success"
 		resp["is_mtr"] = isMtr
+		resp["user_hash"] = userHash
 		resp["payload"] = chaptersList
 		resp["translators"] = transList
 	} else {
@@ -104,6 +105,7 @@ func DownloadManga(w http.ResponseWriter, r *http.Request) {
 		CBZ:       r.FormValue("optCBZ"),
 		Del:       r.FormValue("optDEL"),
 		PrefTrans: r.FormValue("optPrefTrans"),
+		UserHash:  r.FormValue("userHash"),
 	}
 
 	url, _ := urlx.Parse(r.FormValue("mangaURL"))
@@ -112,9 +114,9 @@ func DownloadManga(w http.ResponseWriter, r *http.Request) {
 	downloadOpts.MangaURL = strings.Split(url.String(), "?")[0]
 	downloadOpts.SavePath = strings.Trim(url.Path, "/")
 
-	if slices.Contains(config.Cfg.CurrentURLs.MangaLib, host) {
+	if tools.CheckSource(config.Cfg.CurrentURLs.MangaLib, host) {
 		go mangalib.DownloadManga(downloadOpts)
-	} else if slices.Contains(config.Cfg.CurrentURLs.ReadManga, host) {
+	} else if tools.CheckSource(config.Cfg.CurrentURLs.ReadManga, host) {
 		go readmanga.DownloadManga(downloadOpts)
 	}
 

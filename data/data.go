@@ -32,6 +32,7 @@ type DownloadOpts struct {
 	Del       string
 	SavePath  string
 	PrefTrans string
+	UserHash  string
 }
 
 var WSChan = make(chan WSData, 10)

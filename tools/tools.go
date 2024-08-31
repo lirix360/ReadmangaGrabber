@@ -12,7 +12,6 @@ import (
 	"math"
 	"net/http"
 	"os"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -153,9 +152,9 @@ func GetPageCF(pageURL string) (io.ReadCloser, error) {
 
 	useProxy := false
 
-	if slices.Contains(config.Cfg.CurrentURLs.MangaLib, host) {
+	if CheckSource(config.Cfg.CurrentURLs.MangaLib, host) {
 		useProxy = config.Cfg.Proxy.Use.Mangalib
-	} else if slices.Contains(config.Cfg.CurrentURLs.ReadManga, host) {
+	} else if CheckSource(config.Cfg.CurrentURLs.ReadManga, host) {
 		useProxy = config.Cfg.Proxy.Use.Readmanga
 	}
 
@@ -300,4 +299,14 @@ func RemoveDuplicateStr(strSlice []string) []string {
 		}
 	}
 	return list
+}
+
+func CheckSource(srcList []string, srcHost string) bool {
+	for _, src := range srcList {
+		if strings.Contains(srcHost, src) {
+			return true
+		}
+	}
+
+	return false
 }

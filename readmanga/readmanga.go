@@ -59,21 +59,25 @@ func GetMangaInfo(mangaURL string) (data.MangaInfo, error) {
 	return mangaInfo, nil
 }
 
-func GetChaptersList(mangaURL string) ([]data.ChaptersList, []data.RMTranslators, bool, error) {
+func GetChaptersList(mangaURL string) ([]data.ChaptersList, []data.RMTranslators, bool, string, error) {
 	var err error
 	var chaptersList []data.ChaptersList
 	var transList []data.RMTranslators
+	var userHash string
 
 	isMtr := false
 
 	pageBody, err := tools.GetPageCF(mangaURL)
 	if err != nil {
-		return chaptersList, transList, isMtr, err
+		return chaptersList, transList, isMtr, "", err
 	}
 
-	chaptersPage, err := goquery.NewDocumentFromReader(pageBody)
+	var buf bytes.Buffer
+	tee := io.TeeReader(pageBody, &buf)
+
+	chaptersPage, err := goquery.NewDocumentFromReader(tee)
 	if err != nil {
-		return chaptersList, transList, isMtr, err
+		return chaptersList, transList, isMtr, "", err
 	}
 
 	if chaptersPage.Find(".mtr-message").Length() > 0 {
@@ -91,6 +95,16 @@ func GetChaptersList(mangaURL string) ([]data.ChaptersList, []data.RMTranslators
 
 		chaptersList = append(chaptersList, chapter)
 	})
+
+	// MM
+	bufStr := new(strings.Builder)
+	_, err = io.Copy(bufStr, &buf)
+	if err != nil {
+		return chaptersList, transList, isMtr, "", err
+	}
+
+	dataUH := regexp.MustCompile(`window.user_hash = '.+';`)
+	userHash = strings.Trim(dataUH.FindString(bufStr.String()), "window.user_hash = ';")
 
 	// RM
 	chaptersPage.Find("#translation > option").Each(func(i int, s *goquery.Selection) {
@@ -119,7 +133,7 @@ func GetChaptersList(mangaURL string) ([]data.ChaptersList, []data.RMTranslators
 		transList = append(transList, trans)
 	})
 
-	return tools.ReverseList(chaptersList), transList, isMtr, nil
+	return tools.ReverseList(chaptersList), transList, isMtr, userHash, nil
 }
 
 func DownloadManga(downData data.DownloadOpts) error {
@@ -130,7 +144,7 @@ func DownloadManga(downData data.DownloadOpts) error {
 
 	switch downData.Type {
 	case "all":
-		chaptersList, _, _, err = GetChaptersList(downData.MangaURL)
+		chaptersList, _, _, _, err = GetChaptersList(downData.MangaURL)
 		if err != nil {
 			slog.Error(
 				"Ошибка при получении списка глав",
@@ -260,13 +274,24 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 
 	ptOpt := ""
 	mtrOpt := ""
+	uhOpt := ""
 
 	if downData.Mtr {
 		mtrOpt = "?mtr=1"
 	}
 
-	if downData.PrefTrans != "" {
+	if downData.UserHash != "" {
 		if mtrOpt != "" {
+			uhOpt = "&"
+		} else {
+			uhOpt = "?"
+		}
+
+		uhOpt = uhOpt + "d=" + downData.UserHash
+	}
+
+	if downData.PrefTrans != "" {
+		if mtrOpt != "" || uhOpt != "" {
 			ptOpt = "&"
 		} else {
 			ptOpt = "?"
@@ -275,7 +300,7 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 		ptOpt = ptOpt + "tran=" + downData.PrefTrans
 	}
 
-	page, err := tools.GetPageCF(chapterURL + mtrOpt + ptOpt)
+	page, err := tools.GetPageCF(chapterURL + mtrOpt + uhOpt + ptOpt)
 	if err != nil {
 		slog.Error(
 			"Ошибка при получении страниц",

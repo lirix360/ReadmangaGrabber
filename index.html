@@ -308,6 +308,7 @@
     <script>
         var clicked = false;
         var isMtr = false;
+        var userHash = "";
 
         $(function() {
             CheckUpdate();
@@ -676,6 +677,7 @@
                     case 'success':
                         var x = 1;
                         isMtr = data.is_mtr;
+                        userHash = data.user_hash;
 
                         $.each(data.payload, function(k, item) {
                             var volHtml = "<div class=\"w-100\" style=\"margin-bottom: 15px !important;\"><div class=\"form-check form-switch\"><input class=\"form-check-input single-volume\" type=\"checkbox\" id=\"tom_" + k + "\" onchange=\"checkVolCh('" + k + "');\"><label class=\"form-check-label\" for=\"tom_" + k + "\"><b>Том " + k + "</b></label></div></div>";
@@ -764,6 +766,7 @@
                 "downloadType": type,
                 "mangaURL": $('#mangaURL').val(),
                 "isMtr": isMtr,
+                "userHash": userHash,
                 "optPDFch": optPDFch,
                 "optPDFvol": optPDFvol,
                 "optPDFall": optPDFall,

@@ -13,7 +13,6 @@ require (
 	github.com/phpdave11/gofpdf v1.4.2
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	go.etcd.io/bbolt v1.3.11
-	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948
 	golang.org/x/image v0.19.0
 	gopkg.in/olahol/melody.v1 v1.0.0-20170518105555-d52139073376
 )

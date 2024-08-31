@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -90,7 +91,7 @@ func init() {
 		os.Exit(1)
 	}
 
-	Cfg.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+	Cfg.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
 }
 
 func createConfig() {
@@ -184,26 +185,40 @@ func UpdateCfg() {
 }
 
 func GetURLs() data.CurrentURLS {
+	var err error
 	tmpData := map[string]string{}
 	curURLs := data.CurrentURLS{}
 
-	resp, err := http.Get("https://raw.githubusercontent.com/lirix360/ReadmangaGrabber/master/lib_urls.json")
-	if err != nil {
-		slog.Error(
-			"Ошибка при получении списков URL библиотек",
-			slog.String("Message", err.Error()),
-		)
-		return curURLs
-	}
-	defer resp.Body.Close()
+	var body []byte
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		slog.Error(
-			"Ошибка при обработке списков URL библиотек",
-			slog.String("Message", err.Error()),
-		)
-		return curURLs
+	if isFileExist("src_list.json") {
+		body, err = os.ReadFile("src_list.json")
+		if err != nil {
+			slog.Error(
+				"Ошибка при обработке файла списков URL библиотек",
+				slog.String("Message", err.Error()),
+			)
+			return curURLs
+		}
+	} else {
+		resp, err := http.Get("https://raw.githubusercontent.com/lirix360/ReadmangaGrabber/master/src_list.json")
+		if err != nil {
+			slog.Error(
+				"Ошибка при получении списков URL библиотек",
+				slog.String("Message", err.Error()),
+			)
+			return curURLs
+		}
+		defer resp.Body.Close()
+
+		body, err = io.ReadAll(resp.Body)
+		if err != nil {
+			slog.Error(
+				"Ошибка при обработке загружаемых списков URL библиотек",
+				slog.String("Message", err.Error()),
+			)
+			return curURLs
+		}
 	}
 
 	json.Unmarshal(body, &tmpData)
@@ -212,4 +227,12 @@ func GetURLs() data.CurrentURLS {
 	curURLs.ReadManga = strings.Split(tmpData["readmanga"], ", ")
 
 	return curURLs
+}
+
+func isFileExist(filePath string) bool {
+	if _, err := os.Stat(filePath); errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+
+	return true
 }
