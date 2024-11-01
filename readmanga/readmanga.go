@@ -20,6 +20,7 @@ import (
 	"github.com/lirix360/ReadmangaGrabber/config"
 	"github.com/lirix360/ReadmangaGrabber/data"
 	"github.com/lirix360/ReadmangaGrabber/history"
+	"github.com/lirix360/ReadmangaGrabber/jpeg"
 	"github.com/lirix360/ReadmangaGrabber/pdf"
 	"github.com/lirix360/ReadmangaGrabber/tools"
 )
@@ -376,6 +377,10 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 				},
 			}
 			continue
+		}
+
+		if downData.Resize == "1" {
+			jpeg.ResizeImage(fileName, uint(downData.ResizeW), uint(downData.ResizeH))
 		}
 
 		savedFiles = append(savedFiles, fileName)
