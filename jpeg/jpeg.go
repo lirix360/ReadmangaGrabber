@@ -2,7 +2,6 @@ package jpeg
 
 import (
 	"image/jpeg"
-	"log"
 	"os"
 
 	"github.com/nfnt/resize"
@@ -15,12 +14,12 @@ func ResizeImage(path string, width uint, height uint) {
 
 	file, err := os.Open(path)
 	if err != nil {
-		log.Fatal(err)
+		return
 	}
 
 	img, err := jpeg.Decode(file)
 	if err != nil {
-		log.Fatal(err)
+		return
 	}
 	file.Close()
 
@@ -28,7 +27,7 @@ func ResizeImage(path string, width uint, height uint) {
 
 	out, err := os.Create(path)
 	if err != nil {
-		log.Fatal(err)
+		return
 	}
 	defer out.Close()
 
