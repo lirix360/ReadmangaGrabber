@@ -100,6 +100,19 @@
                             </div>
                         </div>
                         <div class="mb-3">
+                            <label for="mangaURL" class="form-label">Параметры изображения:</label><br />
+                            <div class="form-check form-check-inline form-switch" style="margin-right: 2px !important;">
+                                <input class="form-check-input opt-data" type="checkbox" id="imgResize" onchange="resizeImage();">
+                                <label class="form-check-label" for="imgResize">Изменить размер</label>
+                                <div class="input-group my-3" id="imgResizeDiv">
+                                    <span class="input-group-text">Высота (px)</span>
+                                    <input type="number" aria-label="Высота (px)" class="form-control opt-data" value="800" min="1" id="resizeHeight">
+                                    <span class="input-group-text">Ширина (px)</span>
+                                    <input type="number" aria-label="Ширина (px)" class="form-control opt-data" value="600" min="1" id="resizeWidth">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
                             <label for="mangaURL" class="form-label" style="width: 100% !important;">
                                 Адрес манги:
                                 <div class="float-end">
@@ -311,6 +324,7 @@
         var userHash = "";
 
         $(function() {
+            resizeImage();
             CheckUpdate();
 
             var theme = localStorage.getItem("mangaGrabberTheme");
@@ -579,6 +593,16 @@
             });
         }
 
+        function resizeImage(){
+            var isOptPDFchChecked = $('#imgResize').is(':checked');
+
+            if (isOptPDFchChecked) {
+                $('#imgResizeDiv').css("display", "flex");
+            } else {
+                $('#imgResizeDiv').css("display", "none");
+            }
+        }
+
         function checkPDFType() {
             var isOptPDFchChecked = $('#optPDFch').is(':checked');
             var isOptPDFvolChecked = $('#optPDFvol').is(':checked');
@@ -752,6 +776,10 @@
 
             var optPrefTrans = $('#transList').val();
 
+            var imgResize = $('#imgResize').is(':checked') ? 1 : 0;
+            var resizeH = parseInt($('#resizeHeight').val());
+            var resizeW = parseInt($('#resizeWidth').val());
+
             var chapters = [];
 
             if (type == 'chapters') {
@@ -773,7 +801,10 @@
                 "optCBZ": optCBZ,
                 "optDEL": optDEL,
                 "optPrefTrans": optPrefTrans,
-                "selectedChapters": chaptersJSON
+                "selectedChapters": chaptersJSON,
+                "resize": imgResize,
+                "resizeW": resizeW,
+                "resizeH": resizeH,
             }, function(data) {});
         }
 

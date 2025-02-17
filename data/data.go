@@ -26,6 +26,9 @@ type DownloadOpts struct {
 	MangaURL  string
 	Mtr       bool
 	PDFch     string
+	Resize    string
+	ResizeW   int
+	ResizeH   int
 	PDFvol    string
 	PDFall    string
 	CBZ       string

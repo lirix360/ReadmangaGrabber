@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/goware/urlx"
@@ -95,6 +96,13 @@ func DownloadManga(w http.ResponseWriter, r *http.Request) {
 		isMtr = true
 	}
 
+	rh, err_h := strconv.Atoi(r.FormValue("resizeH"))
+	rw, err_w := strconv.Atoi(r.FormValue("resizeW"))
+	if err_h != nil || err_w != nil {
+		rh = 0
+		rw = 0
+	}
+
 	downloadOpts := data.DownloadOpts{
 		Mtr:       isMtr,
 		Type:      r.FormValue("downloadType"),
@@ -106,6 +114,9 @@ func DownloadManga(w http.ResponseWriter, r *http.Request) {
 		Del:       r.FormValue("optDEL"),
 		PrefTrans: r.FormValue("optPrefTrans"),
 		UserHash:  r.FormValue("userHash"),
+		Resize:    r.FormValue("resize"),
+		ResizeW:   rw,
+		ResizeH:   rh,
 	}
 
 	url, _ := urlx.Parse(r.FormValue("mangaURL"))
