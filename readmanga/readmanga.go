@@ -341,7 +341,7 @@ func DownloadChapter(downData data.DownloadOpts, curChapter data.ChaptersList) (
 		return nil, errors.New("noauth")
 	}
 
-	r := regexp.MustCompile(`rm_h\.readerDoInit\(\[\[(.+)\]\],\s(false|true),\s(\[.+\]).+\);`)
+	r := regexp.MustCompile(`rm_h\.readerInit\(\[\[(.+)\]\],\s(false|true),\s(\[.+\]).+\);`)
 
 	srvList := ServersList{}
 
