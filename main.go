@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"encoding/json"
+	"html/template"
 	"io"
 	"log/slog"
 	"net/http"
@@ -100,7 +101,12 @@ func main() {
 			)
 		}
 	})
-
+	
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		tmpl := template.Must(template.New("index.html").ParseFS(webUI, "index.html"))
+		tmpl.Execute(w, config.Cfg)
+	})
+	
 	go func() {
 		for {
 			msgData := <-data.WSChan
@@ -123,7 +129,7 @@ func main() {
 		}
 	}()
 
-	r.PathPrefix("/").Handler(http.FileServer(http.FS(webUI)))
+	r.PathPrefix("/assets/").Handler(http.FileServer(http.FS(webUI)))
 
 	srv := &http.Server{
 		Handler:      r,

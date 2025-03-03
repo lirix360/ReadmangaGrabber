@@ -327,7 +327,7 @@
             // return e.returnValue = '';
         });
 
-        var ws = new WebSocket("ws://127.0.0.1:8888/ws");
+        var ws = new WebSocket("ws://{{.Server.Addr}}:{{.Server.Port}}/ws");
 
         ws.onmessage = function(msg) {
             var data = JSON.parse(msg.data);
